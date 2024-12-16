@@ -48,7 +48,7 @@ const model = ref([
                             {
                                 label: "Inventory Summary",
                                 icon: "pi pi-fw pi-file-pdf",
-                                to: "",
+                                to: "Inventory/GenerateReport/InventorySummary",
                             },
                             {
                                 label: "Stock History",

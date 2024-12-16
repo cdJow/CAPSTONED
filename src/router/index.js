@@ -41,6 +41,15 @@ const router = createRouter({
                 },
 
                 {
+                    path: "/Inventory/GenerateReport/InventorySummary",
+                    name: "Inventory Summary",
+                    component: () =>
+                        import(
+                            "@/views/pages/Inventory/GenerateReport/InventorySummary.vue"
+                        ),
+                },
+
+                {
                     path: "/Inventory/ManageInventory/ManageItems",
                     name: "Manage Inventory",
                     component: () =>

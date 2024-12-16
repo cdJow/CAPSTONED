@@ -11,7 +11,7 @@ const customers3 = ref(null);
 const loading1 = ref(null);
 const expandedRows = ref([]);
 const batchExpandedRows = ref([]);
-
+const toast = ref(null);
 const NonConsumablebatchDialog = ref(false);
 
 const op2 = ref();
@@ -23,12 +23,13 @@ const selectedBatchForDeletion = ref(null);
 
 const product = ref({}); // Initialize product as a reactive reference
 const batchDialog = ref(false);
-const selectedBatch = ref({});
 
 const productDialog = ref(false);
 const products = ref([]); // Use `ref` for reactivity
 
 const submitted = ref(false);
+
+const selectedBatch = ref({});
 
 function editProduct(prod) {
     product.value = { ...prod }; // Clone the product data to avoid direct mutations
@@ -64,6 +65,12 @@ function saveProduct() {
     }
 }
 
+const warrantyUnitOptions = ref([
+    { name: "Day(s)", value: "day" },
+    { name: "Month(s)", value: "month" },
+    { name: "Year(s)", value: "year" },
+]);
+
 const unitOptions = ref([
     { label: "Kilograms", value: "kg" },
     { label: "Liters", value: "l" },
@@ -71,14 +78,11 @@ const unitOptions = ref([
 ]);
 
 function saveNonConsumableBatchDetails() {
-    // Validation: Check required fields
     if (
         !selectedBatch.value.batchNumber ||
-        selectedBatch.value.quantity == null ||
-        !selectedBatch.value.purchaseDate ||
-        selectedBatch.value.purchasePrice == null
+        !selectedBatch.value.warrantyValue
     ) {
-        console.error("Some required fields are missing.");
+        console.error("Batch data is incomplete.");
         return;
     }
 
@@ -95,7 +99,7 @@ function saveNonConsumableBatchDetails() {
         );
 
         if (batchIndex !== -1) {
-            // Update the batch
+            // Update the batch data
             products.value[productIndex].batches[batchIndex] = {
                 ...selectedBatch.value,
             };
@@ -107,36 +111,86 @@ function saveNonConsumableBatchDetails() {
         console.warn("Product not found containing this batch.");
     }
 
-    // Close the dialog
+    // Show success toast
+    showSuccess();
     NonConsumablebatchDialog.value = false;
+}
 
-    console.log("Updated Products List:", products.value);
+function showSuccess() {
+    toast.value.add({
+        severity: "success",
+        summary: "Success",
+        detail: "Edit Successful",
+        life: 3000,
+    });
 }
 
 function saveBatchDetails() {
+    // Mark form as submitted to trigger validation messages
     submitted.value = true;
 
-    if (selectedBatch?.value.batchNumber?.trim()) {
-        const productIndex = products.value.findIndex(
-            (p) => p.id === selectedBatch.value.productId,
-        );
-        if (productIndex !== -1) {
-            const batchIndex = products.value[productIndex].batches.findIndex(
-                (b) => b.batchId === selectedBatch.value.batchId,
-            );
-            if (batchIndex !== -1) {
-                // Update existing batch
-                products.value[productIndex].batches[batchIndex] =
-                    selectedBatch.value;
-            } else {
-                // Add new batch
-                selectedBatch.value.batchId = createId(); // Assuming batchId is similar to product id
-                products.value[productIndex].batches.push(selectedBatch.value);
-            }
-        }
-        batchDialog.value = false;
-        selectedBatch.value = {};
+    // Validate required fields
+    if (
+        !selectedBatch.value.batchNumber ||
+        !selectedBatch.value.quantity ||
+        !selectedBatch.value.purchaseDate ||
+        !selectedBatch.value.purchasePrice ||
+        !selectedBatch.value.unit ||
+        !selectedBatch.value.supplier ||
+        !selectedBatch.value.expDate
+    ) {
+        console.error("Validation failed: All required fields must be filled.");
+        return;
     }
+
+    // Find the product containing the batch
+    const productIndex = products.value.findIndex((product) =>
+        product.batches?.some(
+            (batch) => batch.batchId === selectedBatch.value.batchId,
+        ),
+    );
+
+    if (productIndex !== -1) {
+        // Find the batch within the product's batches
+        const batchIndex = products.value[productIndex].batches.findIndex(
+            (batch) => batch.batchId === selectedBatch.value.batchId,
+        );
+
+        if (batchIndex !== -1) {
+            // Update the existing batch
+            products.value[productIndex].batches[batchIndex] = {
+                ...selectedBatch.value,
+            };
+            console.log(
+                "Batch updated successfully:",
+                products.value[productIndex].batches[batchIndex],
+            );
+        } else {
+            // Add a new batch to the product's batches
+            selectedBatch.value.batchId = createId(); // Generate a new ID for the batch
+            products.value[productIndex].batches.push({
+                ...selectedBatch.value,
+            });
+            console.log(
+                "New batch added to product:",
+                products.value[productIndex],
+            );
+        }
+    } else {
+        console.warn("Product containing this batch was not found.");
+    }
+
+    showSuccess();
+    // Close the dialog after successful save
+    batchDialog.value = false;
+
+    // Reset form state
+    submitted.value = false;
+    Object.keys(selectedBatch.value).forEach((key) => {
+        selectedBatch.value[key] = null;
+    });
+
+    console.log("Form closed and reset.");
 }
 
 function createId() {
@@ -158,6 +212,7 @@ function deleteProduct() {
         }
         deleteProductDialog.value = false; // Close the dialog
         product.value = null; // Reset the product reference
+        showError();
     }
 }
 
@@ -273,16 +328,20 @@ function openNonConsumableBatchDialog(batchData) {
         return;
     }
 
-    // Clone the batch data to avoid direct mutation
+    // Clone the batch data into selectedBatch
     selectedBatch.value = { ...batchData };
 
-    // Open the dialog
+    // Ensure warrantyValue and warrantyUnit are defined
+    if (!selectedBatch.value.warrantyValue) {
+        selectedBatch.value.warrantyValue = 1; // Default warranty value
+    }
+    if (!selectedBatch.value.warrantyUnit) {
+        selectedBatch.value.warrantyUnit = "year"; // Default warranty unit
+    }
+
     NonConsumablebatchDialog.value = true;
 
-    console.log(
-        "Opening Non-Consumable Batch Dialog with data:",
-        selectedBatch.value,
-    );
+    console.log("Opening dialog with data:", selectedBatch.value);
 }
 
 function formatPrice(value) {
@@ -326,16 +385,82 @@ function collapseAll() {
     expandedRows.value = null;
 }
 
-function confirmDeleteBatch(batch, productId) {
-    if (!batch || !productId) {
-        console.error(
-            "Invalid batch or product ID passed to confirmDeleteBatch",
-        );
+function confirmDeleteBatch(batch) {
+    if (!batch || !batch.batchId) {
+        console.error("Invalid batch data passed to confirmDeleteBatch.");
         return;
     }
-    selectedBatchForDeletion.value = { ...batch, productId }; // Set the batch and product ID
-    deleteBatchDialog.value = true; // Open the delete confirmation dialog
+
+    // Attach the productId to the batch for easier lookup
+    const productContainingBatch = products.value.find((product) =>
+        product.batches?.some((b) => b.batchId === batch.batchId),
+    );
+
+    if (!productContainingBatch) {
+        console.error("Product containing the batch not found.");
+        return;
+    }
+
+    selectedBatchForDeletion.value = {
+        ...batch,
+        productId: productContainingBatch.id,
+    };
+
+    deleteBatchDialog.value = true;
+
     console.log("Batch set for deletion:", selectedBatchForDeletion.value);
+}
+
+function deleteBatch() {
+    if (
+        !selectedBatchForDeletion.value ||
+        !selectedBatchForDeletion.value.batchId ||
+        !selectedBatchForDeletion.value.productId
+    ) {
+        console.error("Invalid batch or product ID for deletion.");
+        return;
+    }
+
+    // Find the product containing the batch
+    const productIndex = products.value.findIndex(
+        (product) => product.id === selectedBatchForDeletion.value.productId,
+    );
+
+    if (productIndex === -1) {
+        console.error("Product containing this batch not found.");
+        return;
+    }
+
+    // Find the batch within the product's batch list
+    const batchIndex = products.value[productIndex].batches.findIndex(
+        (batch) => batch.batchId === selectedBatchForDeletion.value.batchId,
+    );
+
+    if (batchIndex === -1) {
+        console.error("Batch not found within the product's batches.");
+        return;
+    }
+
+    // Remove the batch from the product's batch list
+    products.value[productIndex].batches.splice(batchIndex, 1);
+
+    // Close the dialog
+    deleteBatchDialog.value = false;
+
+    // Reset the selectedBatchForDeletion
+    selectedBatchForDeletion.value = null;
+
+    console.log("Batch deleted successfully.");
+    showError();
+}
+
+function showError() {
+    toast.value.add({
+        severity: "error",
+        summary: "Deleted",
+        detail: "Deleted Successfuly",
+        life: 3000,
+    });
 }
 </script>
 
@@ -464,6 +589,7 @@ function confirmDeleteBatch(batch, productId) {
                             />
                         </IconField>
                     </div>
+
                     <DataTable
                         class="p-datatable-sm"
                         v-model:expandedRows="batchExpandedRows"
@@ -526,20 +652,24 @@ function confirmDeleteBatch(batch, productId) {
                             class="gap-2"
                         >
                             <template #body="slotProps">
-                                <Button
-                                    icon="pi pi-pencil"
-                                    outlined
-                                    rounded
-                                    class="mb-1 mr-2"
-                                    @click="editbatch(slotProps.data)"
-                                />
-                                <Button
-                                    icon="pi pi-trash"
-                                    outlined
-                                    rounded
-                                    severity="danger"
-                                    @click="confirmDeleteBatch(slotProps.data)"
-                                />
+                                <div class="flex">
+                                    <Button
+                                        icon="pi pi-pencil"
+                                        outlined
+                                        rounded
+                                        class="mb-1 mr-2"
+                                        @click="editbatch(slotProps.data)"
+                                    />
+                                    <Button
+                                        icon="pi pi-trash"
+                                        outlined
+                                        rounded
+                                        severity="danger"
+                                        @click="
+                                            confirmDeleteBatch(slotProps.data)
+                                        "
+                                    />
+                                </div>
                             </template>
                         </Column>
 
@@ -687,11 +817,15 @@ function confirmDeleteBatch(batch, productId) {
                             header="Supplier"
                             sortable
                         ></Column>
-                        <Column
-                            field="warranty"
-                            header="Warranty"
-                            sortable
-                        ></Column>
+                        <Column field="warranty" header="Warranty" sortable>
+                            <template #body="slotProps">
+                                <span
+                                    >{{ slotProps.data.warrantyValue }}
+                                    {{ slotProps.data.warrantyUnit }}</span
+                                >
+                            </template>
+                        </Column>
+
                         <Column
                             field="minimumstocks"
                             header="Minimum Stocks"
@@ -816,7 +950,7 @@ function confirmDeleteBatch(batch, productId) {
                                                     sortable
                                                 ></Column>
                                                 <Column
-                                                    field="Assignedroom"
+                                                    field="assignedroom"
                                                     header="Assigned Room"
                                                     sortable
                                                 ></Column>
@@ -901,7 +1035,6 @@ function confirmDeleteBatch(batch, productId) {
                     id="name"
                     v-model.trim="product.name"
                     required="true"
-                    autofocus
                     :invalid="submitted && !product.name"
                     fluid
                 />
@@ -915,7 +1048,6 @@ function confirmDeleteBatch(batch, productId) {
                     id="brand"
                     v-model.trim="product.brand"
                     required="true"
-                    autofocus
                     :invalid="submitted && !product.brand"
                     fluid
                 />
@@ -949,9 +1081,8 @@ function confirmDeleteBatch(batch, productId) {
         </template>
     </Dialog>
 
-    <!-- Delete batch Dialog -->
+    <!-- Delete Bactch Dialog-->
     <Dialog
-        :dismissableMask="true"
         v-model:visible="deleteBatchDialog"
         :style="{ width: '450px' }"
         header="Confirm"
@@ -959,11 +1090,11 @@ function confirmDeleteBatch(batch, productId) {
     >
         <div class="flex items-center gap-4">
             <i class="pi pi-exclamation-triangle !text-3xl" />
-            <span v-if="selectedBatchForDeletion"
-                >Are you sure you want to delete
+            <span v-if="selectedBatchForDeletion">
+                Are you sure you want to delete
                 <b>{{ selectedBatchForDeletion.batchNumber }}</b
-                >?</span
-            >
+                >?
+            </span>
         </div>
         <template #footer>
             <Button
@@ -972,11 +1103,7 @@ function confirmDeleteBatch(batch, productId) {
                 text
                 @click="deleteBatchDialog = false"
             />
-            <Button
-                label="Yes"
-                icon="pi pi-check"
-                @click="confirmDeleteBatch(batch, product.id)"
-            />
+            <Button label="Yes" icon="pi pi-check" @click="deleteBatch" />
         </template>
     </Dialog>
 
@@ -998,7 +1125,6 @@ function confirmDeleteBatch(batch, productId) {
                     id="batchNumber"
                     v-model.trim="selectedBatch.batchNumber"
                     required="true"
-                    autofocus
                     :invalid="submitted && !selectedBatch.batchNumber"
                     fluid
                 />
@@ -1154,7 +1280,6 @@ function confirmDeleteBatch(batch, productId) {
                 <InputText
                     id="batchNumber"
                     v-model.trim="selectedBatch.batchNumber"
-                    autofocus
                     fluid
                 />
             </div>
@@ -1230,30 +1355,33 @@ function confirmDeleteBatch(batch, productId) {
                     <label for="batchNumber" class="font-medium"
                         >Warranty</label
                     >
-                    <!-- Input Field for Warranty -->
                     <InputText
-                        v-model.number="selectedBatch.warranty"
+                        v-model.number="selectedBatch.warrantyValue"
+                        placeholder="Enter warranty value"
                         class="w-full"
                     />
+
                     <Slider
-                        v-model.number="selectedBatch.warranty"
+                        v-model.number="selectedBatch.warrantyValue"
                         :min="0"
                         :max="100"
                         class="mt-2 w-full"
                     />
                 </div>
 
+                <!-- Warranty Unit Dropdown -->
                 <div class="flex flex-col gap-2">
-                    <label for="dropdown" class="font-medium"
+                    <label for="warrantyUnit" class="font-medium"
                         >Select Duration</label
                     >
                     <Select
-                        v-model="dropdownItem"
-                        :options="dropdownItems"
+                        v-model="selectedBatch.warrantyUnit"
+                        :options="warrantyUnitOptions"
                         optionLabel="name"
+                        optionValue="value"
                         placeholder="Select Day / Month / Year"
                         class="w-full"
-                    ></Select>
+                    />
                 </div>
             </div>
         </div>
@@ -1273,6 +1401,77 @@ function confirmDeleteBatch(batch, productId) {
             />
         </template>
     </Dialog>
+
+    <!-- Edit  Non-Consumable Serial  Details Dialog -->
+    <Dialog
+        :dismissableMask="true"
+        v-model:visible="batchDialog"
+        :style="{ width: '450px' }"
+        header="Batch Details"
+        :modal="true"
+    >
+        <div class="flex flex-col gap-6">
+            <!-- Batch Number -->
+            <div>
+                <label for="batchNumber" class="block font-bold mb-3"
+                    >Batch Number</label
+                >
+                <InputText
+                    id="serialNumber"
+                    v-model.trim="selectedBatch.serialNumber"
+                    required="true"
+                    :invalid="submitted && !selectedBatch.serialNumber"
+                    fluid
+                />
+            </div>
+
+            <div>
+                <label for="Assig" class="block font-bold mb-3">Supplier</label>
+                <InputText
+                    id="supplier"
+                    v-model="selectedBatch.supplier"
+                    required="true"
+                    fluid
+                />
+                <small
+                    v-if="submitted && !selectedBatch.supplier"
+                    class="text-red-500"
+                    >Supplier is required.</small
+                >
+            </div>
+
+            <!-- Expiration Date -->
+            <div>
+                <label for="expDate" class="block font-bold mb-3"
+                    >Expiration Date</label
+                >
+                <DatePicker
+                    id="expDate"
+                    v-model="selectedBatch.expDate"
+                    showIcon
+                    required="true"
+                    fluid
+                />
+                <small
+                    v-if="submitted && !selectedBatch.expDate"
+                    class="text-red-500"
+                    >Expiration Date is required.</small
+                >
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <template #footer>
+            <Button
+                label="Cancel"
+                icon="pi pi-times"
+                text
+                @click="hideDialog"
+            />
+            <Button label="Save" icon="pi pi-check" @click="saveBatchDetails" />
+        </template>
+    </Dialog>
+    <Toast ref="toast" />
 </template>
 
 <style scoped lang="scss">

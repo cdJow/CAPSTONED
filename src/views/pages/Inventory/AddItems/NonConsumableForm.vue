@@ -1,12 +1,12 @@
 <script setup>
-import { ProductService } from '@/service/ProductService';
+import { ProductService } from "@/service/ProductService";
 import { onMounted, ref } from "vue";
 
 // Reactive state for serial numbers
 const newSerialNumber = ref(""); // Holds the input for the new serial number
 const serialNumbers = ref([]); // Array of existing serial numbers
 const arrivalDate = ref(null); // For tracking the arrival date
-const expiryDate = ref(null); // For tracking the expiry date
+
 const sliderValue = ref(50);
 
 // Reference for the Popover
@@ -40,9 +40,9 @@ const addSerialNumber = () => {
 };
 
 const dropdownItems = ref([
-    { name: 'Day', code: 'Day' },
-    { name: 'Month', code: 'Month' },
-    { name: 'Years', code: 'Years' }
+    { name: "Day", code: "Day" },
+    { name: "Month", code: "Month" },
+    { name: "Years", code: "Years" },
 ]);
 
 // Function to toggle the DataTable Popover
@@ -58,55 +58,82 @@ const removeSerialNumber = (index) => {
 };
 </script>
 
-
 <template>
     <Fluid>
         <div class="">
             <div class="card flex flex-col gap-4">
-                <div class="font-semibold text-xl">Add  Items</div>
+                <div class="font-semibold text-xl">Add Items</div>
 
                 <!-- Section 1: Item Details -->
-               <div class="flex flex-wrap gap-4">
-    <!-- Product Name -->
-    <div class="flex flex-col grow basis-0 gap-2">
-        <label for="productName">Product Name</label>
-        <InputText id="productName" type="text" placeholder="Product Name" />
-        <div class="flex flex-wrap gap-2">
-            <!-- Existing Items Button -->
-            <Button
-                type="button"
-                icon="pi pi-list"
-                label="Existing Items"
-                @click="toggleDataTable"
-            />
-            <!-- Popover for Existing Items -->
-            <Popover ref="op2" id="overlay_panel" style="width: 38rem">
-                    <DataTable
-                        v-model:selection="selectedProduct"
-                        :value="products"
-                        selectionMode="single"
-                        paginator
-                        :rows="5"
-                        @row-select="onProductSelect"
-                    >
-                        <Column field="name" header="Name" sortable style="min-width: 12rem"></Column>
-                        <Column field="brand" header="Brand" sortable style="min-width: 8rem"></Column>
-                        <Column field="category" header="Category" sortable style="min-width: 8rem"></Column>
-                        <Column header="Actions" style="min-width: 8rem">
-                            <template #body="slotProps">
-                                <Button
-                                    label="Select"
-                                    icon="pi pi-check"
-                                    class="w-full"
-                                    @click="selectProduct(slotProps.data)"
-                                ></Button>
-                            </template>
-                        </Column>
-                    </DataTable>
-                </Popover>
-
+                <div class="flex flex-wrap gap-4">
+                    <!-- Product Name -->
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label for="productName">Product Name</label>
+                        <InputText
+                            id="productName"
+                            type="text"
+                            placeholder="Product Name"
+                        />
+                        <div class="flex flex-wrap gap-2">
+                            <!-- Existing Items Button -->
+                            <Button
+                                type="button"
+                                icon="pi pi-list"
+                                label="Existing Items"
+                                @click="toggleDataTable"
+                            />
+                            <!-- Popover for Existing Items -->
+                            <Popover
+                                ref="op2"
+                                id="overlay_panel"
+                                style="width: 38rem"
+                            >
+                                <DataTable
+                                    v-model:selection="selectedProduct"
+                                    :value="products"
+                                    selectionMode="single"
+                                    paginator
+                                    :rows="5"
+                                    @row-select="onProductSelect"
+                                >
+                                    <Column
+                                        field="name"
+                                        header="Name"
+                                        sortable
+                                        style="min-width: 12rem"
+                                    ></Column>
+                                    <Column
+                                        field="brand"
+                                        header="Brand"
+                                        sortable
+                                        style="min-width: 8rem"
+                                    ></Column>
+                                    <Column
+                                        field="category"
+                                        header="Category"
+                                        sortable
+                                        style="min-width: 8rem"
+                                    ></Column>
+                                    <Column
+                                        header="Actions"
+                                        style="min-width: 8rem"
+                                    >
+                                        <template #body="slotProps">
+                                            <Button
+                                                label="Select"
+                                                icon="pi pi-check"
+                                                class="w-full"
+                                                @click="
+                                                    selectProduct(
+                                                        slotProps.data,
+                                                    )
+                                                "
+                                            ></Button>
+                                        </template>
+                                    </Column>
+                                </DataTable>
+                            </Popover>
                         </div>
-                    
                     </div>
                     <!-- Brand -->
                     <div class="flex flex-col grow basis-0 gap-2">
@@ -116,10 +143,14 @@ const removeSerialNumber = (index) => {
                     <!-- Category -->
                     <div class="flex flex-col grow basis-0 gap-2">
                         <label for="category">Category</label>
-                        <InputText id="category" type="text" placeholder="Non-Consumable" readonly />
+                        <InputText
+                            id="category"
+                            type="text"
+                            placeholder="Non-Consumable"
+                            readonly
+                        />
                     </div>
                 </div>
-
 
                 <!-- Section 2: Batch Details -->
                 <div class="grid grid-cols-3 gap-4">
@@ -149,8 +180,8 @@ const removeSerialNumber = (index) => {
                     </div>
                 </div>
 
-                   <!-- Section : stoccks Details -->
-                   <div class="grid grid-cols-2 gap-4">
+                <!-- Section : stoccks Details -->
+                <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col grow basis-0 gap-2">
                         <label for="batchNumber">Minimum Stock</label>
                         <InputText
@@ -184,44 +215,51 @@ const removeSerialNumber = (index) => {
                     </div>
                 </div>
 
-
-                
                 <div class="grid grid-cols-2 gap-6">
-  <!-- Warranty and Day/Month/Year Section -->
-  <div class="grid grid-cols-2 items-start gap-4">
-    <!-- Warranty Input and Slider -->
-    <div class="flex flex-col gap-2">
-      <label for="batchNumber" class="font-medium">Warranty</label>
-      <InputText v-model.number="sliderValue" class="w-full" />
-      <Slider v-model="sliderValue" class="mt-2 w-full" />
-    </div>
+                    <!-- Warranty and Day/Month/Year Section -->
+                    <div class="grid grid-cols-2 items-start gap-4">
+                        <!-- Warranty Input and Slider -->
+                        <div class="flex flex-col gap-2">
+                            <label for="batchNumber" class="font-medium"
+                                >Warranty</label
+                            >
+                            <InputText
+                                v-model.number="sliderValue"
+                                class="w-full"
+                            />
+                            <Slider v-model="sliderValue" class="mt-2 w-full" />
+                        </div>
 
-    <!-- Day / Month / Year Select -->
-    <div class="flex flex-col gap-2">
-      <label for="dropdown" class="font-medium">Select Duration</label>
-      <Select
-        v-model="dropdownItem"
-        :options="dropdownItems"
-        optionLabel="name"
-        placeholder="Select Day / Month / Year"
-        class="w-full"
-      ></Select>
-    </div>
-  </div>
+                        <!-- Day / Month / Year Select -->
+                        <div class="flex flex-col gap-2">
+                            <label for="dropdown" class="font-medium"
+                                >Select Duration</label
+                            >
+                            <Select
+                                v-model="dropdownItem"
+                                :options="dropdownItems"
+                                optionLabel="name"
+                                placeholder="Select Day / Month / Year"
+                                class="w-full"
+                            ></Select>
+                        </div>
+                    </div>
 
-  <!-- Arrival Date Section -->
-  <div class="flex flex-col gap-2">
-    <label for="arrivalDate" class="font-medium">Purchase Date</label>
-    <DatePicker
-      id="PurchaseDate"
-      placeholder="Purchase Date"
-      :showIcon="true"
-      :showButtonBar="true"
-      v-model="arrivalDate"
-      class="w-full"
-    ></DatePicker>
-  </div>
-</div>
+                    <!-- Arrival Date Section -->
+                    <div class="flex flex-col gap-2">
+                        <label for="arrivalDate" class="font-medium"
+                            >Purchase Date</label
+                        >
+                        <DatePicker
+                            id="PurchaseDate"
+                            placeholder="Purchase Date"
+                            :showIcon="true"
+                            :showButtonBar="true"
+                            v-model="arrivalDate"
+                            class="w-full"
+                        ></DatePicker>
+                    </div>
+                </div>
 
                 <!-- Section 3: Individual Items -->
                 <div class="flex flex-wrap gap-4">

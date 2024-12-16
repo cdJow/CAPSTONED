@@ -1,39 +1,23 @@
 <template>
     <div id="highlights" class="py-6 px-6 lg:px-20 mx-0 my-12 lg:mx-20">
         <div class="text-center">
-            <div class="text-surface-900 dark:text-surface-0 font-normal mb-2 text-4xl">Powerful Everywhere</div>
-            <span class="text-muted-color text-2xl">Amet consectetur adipiscing elit...</span>
+            <div class="text-surface-900 dark:text-surface-0 font-normal mb-2 text-4xl">Our Location</div>
+            <span class="text-muted-color text-2xl">Find us easily with the interactive map below</span>
         </div>
 
-        <div class="grid grid-cols-12 gap-4 mt-20 pb-2 md:pb-20">
-            <div class="flex justify-center col-span-12 lg:col-span-6 bg-purple-100 p-0 order-1 lg:order-none" style="border-radius: 8px">
-                <img src="/demo/images/landing/mockup.svg" class="w-11/12" alt="mockup mobile" />
-            </div>
-
-            <div class="col-span-12 lg:col-span-6 my-auto flex flex-col lg:items-end text-center lg:text-right gap-4">
-                <div class="flex items-center justify-center bg-purple-200 self-center lg:self-end" style="width: 4.2rem; height: 4.2rem; border-radius: 10px">
-                    <i class="pi pi-fw pi-mobile !text-4xl text-purple-700"></i>
+        <div class="grid grid-cols-12 gap-4 mt-20">
+            <div class="col-span-12 flex justify-center">
+                <div class="w-full h-96 lg:w-11/12" style="border-radius: 8px; overflow: hidden">
+                    <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d698.042618689094!2d124.24055174107627!3d8.23034940442809!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3255758d3ab4ab77%3A0xf498dd27637f6b05!2sWoodland%20Suites!5e0!3m2!1sen!2sph!4v1734363968355!5m2!1sen!2sph"
+                        width="100%"
+                        height="100%"
+                        style="border:0"
+                        allowfullscreen=""
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                    ></iframe>
                 </div>
-                <div class="leading-none text-surface-900 dark:text-surface-0 text-3xl font-normal">Congue Quisque Egestas</div>
-                <span class="text-surface-700 dark:text-surface-100 text-2xl leading-normal ml-0 md:ml-2" style="max-width: 650px"
-                    >Lectus arcu bibendum at varius vel pharetra vel turpis nunc. Eget aliquet nibh praesent tristique magna sit amet purus gravida. Sit amet mattis vulputate enim nulla aliquet.</span
-                >
-            </div>
-        </div>
-
-        <div class="grid grid-cols-12 gap-4 my-20 pt-2 md:pt-20">
-            <div class="col-span-12 lg:col-span-6 my-auto flex flex-col text-center lg:text-left lg:items-start gap-4">
-                <div class="flex items-center justify-center bg-yellow-200 self-center lg:self-start" style="width: 4.2rem; height: 4.2rem; border-radius: 10px">
-                    <i class="pi pi-fw pi-desktop !text-3xl text-yellow-700"></i>
-                </div>
-                <div class="leading-none text-surface-900 dark:text-surface-0 text-3xl font-normal">Celerisque Eu Ultrices</div>
-                <span class="text-surface-700 dark:text-surface-100 text-2xl leading-normal mr-0 md:mr-2" style="max-width: 650px"
-                    >Adipiscing commodo elit at imperdiet dui. Viverra nibh cras pulvinar mattis nunc sed blandit libero. Suspendisse in est ante in. Mauris pharetra et ultrices neque ornare aenean euismod elementum nisi.</span
-                >
-            </div>
-
-            <div class="flex justify-end order-1 sm:order-2 col-span-12 lg:col-span-6 bg-yellow-100 p-0" style="border-radius: 8px">
-                <img src="/demo/images/landing/mockup-desktop.svg" class="w-11/12" alt="mockup" />
             </div>
         </div>
     </div>

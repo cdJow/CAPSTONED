@@ -13,7 +13,7 @@
             <p class="font-normal text-2xl leading-normal md:mt-4 text-white">
                 Situated in Iligan City where beauty of nature and culture meet.
             </p>
-            <Button class="mt-6" label="BOOK NOW" severity="primary" as="router-link" to="/"></Button>
+            <Button class ="mt-6" label="BOOK NOW" severity="primary" as="router-link" to="/"></Button>
         </div>
         <div class="flex justify-center md:justify-end">
             <img src="/demo/images/landing/screen-1.png" alt="Hero Image" class="w-9/12 md:w-auto" />

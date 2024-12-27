@@ -1,71 +1,128 @@
 <template>
-    <div class="flex flex-wrap gap-4">
-        <!-- Total Items Card -->
-        <div class="card flex-1 min-w-[16rem]">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
+        <!-- Card 1: Total Items -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg transition">
             <div class="flex justify-between mb-4">
                 <div>
-                    <span class="block text-muted-color font-medium mb-4">Total Items</span>
-                    <div class="text-surface-900 dark:text-surface-0 font-medium text-xl">1,500</div>
+                    <span
+                        class="block text-gray-500 dark:text-gray-400 font-medium mb-1"
+                    >
+                        Total Items
+                    </span>
+                    <div
+                        class="text-gray-900 dark:text-white font-bold text-2xl"
+                    >
+                        1,500
+                    </div>
                 </div>
-                <div class="flex items-center justify-center bg-blue-100 dark:bg-blue-400/10 rounded-border" style="width: 2.5rem; height: 2.5rem">
-                    <i class="pi pi-box text-blue-500 !text-xl"></i>
+                <div
+                    class="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-500/10 rounded-lg"
+                >
+                    <i class="pi pi-box text-blue-500 text-2xl"></i>
                 </div>
             </div>
-            <span class="text-primary font-medium">120 </span>
-            <span class="text-muted-color">low stock alerts</span>
+            <span class="text-blue-600 font-semibold">120 low stock </span>
+            <span class="text-gray-500 text-sm">alerts</span>
         </div>
 
-        <!-- Total Value Card -->
-        <div class="card flex-1 min-w-[16rem]">
+        <!-- Card 2: Consumable Items -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg transition">
             <div class="flex justify-between mb-4">
                 <div>
-                    <span class="block text-muted-color font-medium mb-4">Total Inventory Value</span>
-                    <div class="text-surface-900 dark:text-surface-0 font-medium text-xl">$25,000</div>
+                    <span
+                        class="block text-gray-500 dark:text-gray-400 font-medium mb-1"
+                    >
+                        Consumable Items
+                    </span>
+                    <div
+                        class="text-gray-900 dark:text-white font-bold text-2xl"
+                    >
+                        500
+                    </div>
                 </div>
-                <div class="flex items-center justify-center bg-orange-100 dark:bg-orange-400/10 rounded-border" style="width: 2.5rem; height: 2.5rem">
-                    <i class="pi pi-dollar text-orange-500 !text-xl"></i>
+                <div
+                    class="flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-500/10 rounded-lg"
+                >
+                    <i class="pi pi-check-circle text-green-500 text-2xl"></i>
                 </div>
             </div>
-            <span class="text-primary font-medium">%10 </span>
-            <span class="text-muted-color">increase this month</span>
+            <span class="text-green-600 font-semibold">80% </span>
+            <span class="text-gray-500 text-sm">in stock</span>
         </div>
 
-        <!-- Categories Card -->
-        <div class="card flex-1 min-w-[16rem]">
+        <!-- Card 3: Non-Consumable Items -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg transition">
             <div class="flex justify-between mb-4">
                 <div>
-                    <span class="block text-muted-color font-medium mb-4">Total Categories</span>
-                    <div class="text-surface-900 dark:text-surface-0 font-medium text-xl">3</div>
+                    <span
+                        class="block text-gray-500 dark:text-gray-400 font-medium mb-1"
+                    >
+                        Non-Consumable Items
+                    </span>
+                    <div
+                        class="text-gray-900 dark:text-white font-bold text-2xl"
+                    >
+                        350
+                    </div>
                 </div>
-                <div class="flex items-center justify-center bg-cyan-100 dark:bg-cyan-400/10 rounded-border" style="width: 2.5rem; height: 2.5rem">
-                    <i class="pi pi-tags text-cyan-500 !text-xl"></i>
+                <div
+                    class="flex items-center justify-center w-12 h-12 bg-yellow-100 dark:bg-yellow-500/10 rounded-lg"
+                >
+                    <i class="pi pi-tag text-yellow-500 text-2xl"></i>
                 </div>
             </div>
-            <span class="text-primary font-medium">Consumable, Non-Consumable, Rental</span>
+            <span class="text-yellow-600 font-semibold">50 assigned </span>
+            <span class="text-gray-500 text-sm">| 20 damaged</span>
         </div>
 
-        <!-- Damaged Items Card -->
-        <div class="card flex-1 min-w-[16rem]">
+        <!-- Card 4:  -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg transition">
             <div class="flex justify-between mb-4">
                 <div>
-                    <span class="block text-muted-color font-medium mb-4">Damaged Items</span>
-                    <div class="text-surface-900 dark:text-surface-0 font-medium text-xl">80</div>
+                    <span
+                        class="block text-gray-500 dark:text-gray-400 font-medium mb-1"
+                    >
+                        Rental Items
+                    </span>
+                    <div
+                        class="text-gray-900 dark:text-white font-bold text-2xl"
+                    >
+                        150
+                    </div>
                 </div>
-                <div class="flex items-center justify-center bg-red-100 dark:bg-red-400/10 rounded-border" style="width: 2.5rem; height: 2.5rem">
-                    <i class="pi pi-exclamation-circle text-red-500 !text-xl"></i>
+                <div
+                    class="flex items-center justify-center w-12 h-12 bg-purple-100 dark:bg-purple-500/10 rounded-lg"
+                >
+                    <i class="pi pi-calendar text-purple-500 text-2xl"></i>
                 </div>
             </div>
-            <span class="text-primary font-medium">15 </span>
-            <span class="text-muted-color">added this week</span>
+            <span class="text-purple-600 font-semibold">120 available </span>
+            <span class="text-gray-500 text-sm">| 30 in use</span>
+        </div>
+
+        <!-- Card 5: -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg transition">
+            <div class="flex justify-between mb-4">
+                <div>
+                    <span
+                        class="block text-gray-500 dark:text-gray-400 font-medium mb-1"
+                    >
+                        Total Inventory Value
+                    </span>
+                    <div
+                        class="text-gray-900 dark:text-white font-bold text-2xl"
+                    >
+                        $25,000
+                    </div>
+                </div>
+                <div
+                    class="flex items-center justify-center w-12 h-12 bg-orange-100 dark:bg-orange-500/10 rounded-lg"
+                >
+                    <i class="pi pi-dollar text-orange-500 text-2xl"></i>
+                </div>
+            </div>
+            <span class="text-orange-600 font-semibold">5% increase </span>
+            <span class="text-gray-500 text-sm">this month</span>
         </div>
     </div>
 </template>
-
-<style scoped>
-.card {
-    padding: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: white;
-}
-</style>

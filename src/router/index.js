@@ -41,6 +41,15 @@ const router = createRouter({
                 },
 
                 {
+                    path: "/Inventory/ManageInventory/ManageItems",
+                    name: "Manage Inventory",
+                    component: () =>
+                        import(
+                            "@/views/pages/Inventory/ManageInventory/ManageItems.vue"
+                        ),
+                },
+
+                {
                     path: "/Inventory/GenerateReport/InventorySummary",
                     name: "Inventory Summary",
                     component: () =>
@@ -50,14 +59,40 @@ const router = createRouter({
                 },
 
                 {
-                    path: "/Inventory/ManageInventory/ManageItems",
-                    name: "Manage Inventory",
+                    path: "/Inventory/GenerateReport/StockHistory",
+                    name: "Stock Table",
                     component: () =>
                         import(
-                            "@/views/pages/Inventory/ManageInventory/ManageItems.vue"
+                            "@/views/pages/Inventory/GenerateReport/StockHistory.vue"
                         ),
                 },
 
+                {
+                    path: "/Inventory/GenerateReport/LowstockReport",
+                    name: "Low stock Report",
+                    component: () =>
+                        import(
+                            "@/views/pages/Inventory/GenerateReport/LowstockReport.vue"
+                        ),
+                },
+
+                {
+                    path: "/Inventory/GenerateReport/DamagedItems",
+                    name: "Damaged Items",
+                    component: () =>
+                        import(
+                            "@/views/pages/Inventory/GenerateReport/DamagedItems.vue"
+                        ),
+                },
+
+                {
+                    path: "/Inventory/GenerateReport/ExpiredItems",
+                    name: "Expired Items",
+                    component: () =>
+                        import(
+                            "@/views/pages/Inventory/GenerateReport/ExpiredItems.vue"
+                        ),
+                },
 
                 {
                     path: "/uikit/formlayout",

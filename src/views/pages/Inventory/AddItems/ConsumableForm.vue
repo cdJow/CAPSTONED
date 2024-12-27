@@ -1,6 +1,6 @@
 <script setup>
-import { ProductService } from '@/service/ProductService';
-import { onMounted, ref } from "vue";
+import { ProductService } from "@/service/ProductService";
+import { computed, onMounted, ref } from "vue";
 
 // Reactive state for serial numbers
 const newSerialNumber = ref(""); // Holds the input for the new serial number
@@ -10,6 +10,11 @@ const expiryDate = ref(null); // For tracking the expiry date
 
 // Reference for the Popover
 const op2 = ref(null);
+
+// Reactive state for input fields in Step 1
+const productName = ref(""); // Product Name
+const brand = ref(""); // Brand
+const category = ref(""); // Category
 
 // Reactive state for products and selected product
 const products = ref([]); // Holds the list of products
@@ -22,6 +27,25 @@ const fetchProducts = () => {
         products.value = response; // Assign the fetched products to the products ref
     } catch (error) {
         console.error("Error fetching products:", error);
+    }
+};
+
+// Computed property to filter consumable items
+const consumableProducts = computed(() =>
+    products.value.filter((product) => product.category === "Consumable"),
+);
+
+const onProductSelect = (selected) => {
+    console.log(selected); // Debug the selected item
+    if (selected) {
+        productName.value = selected.name || ""; // Populate Product Name
+        brand.value = selected.brand || ""; // Populate Brand
+        category.value = selected.category || ""; // Populate Category
+
+        // Close the Popover
+        if (op2.value) {
+            op2.value.hide();
+        }
     }
 };
 
@@ -51,68 +75,108 @@ const removeSerialNumber = (index) => {
 };
 </script>
 
-
 <template>
     <Fluid>
         <div class="">
             <div class="card flex flex-col gap-4">
-                <div class="font-semibold text-xl">Add  Items</div>
+                <div class="font-semibold text-xl">Add Items</div>
 
                 <!-- Section 1: Item Details -->
-               <div class="flex flex-wrap gap-4">
-    <!-- Product Name -->
-    <div class="flex flex-col grow basis-0 gap-2">
-        <label for="productName">Product Name</label>
-        <InputText id="productName" type="text" placeholder="Product Name" />
-        <div class="flex flex-wrap gap-2">
-            <!-- Existing Items Button -->
-            <Button
-                type="button"
-                icon="pi pi-list"
-                label="Existing Items"
-                @click="toggleDataTable"
-            />
-            <!-- Popover for Existing Items -->
-            <Popover ref="op2" id="overlay_panel" style="width: 38rem">
-    <DataTable
-        v-model:selection="selectedProduct"
-        :value="products"
-        selectionMode="single"
-        paginator
-        :rows="5"
-        @row-select="onProductSelect"
-    >
-        <Column field="name" header="Name" sortable style="min-width: 12rem"></Column>
-        <Column field="brand" header="Brand" sortable style="min-width: 8rem"></Column>
-        <Column field="category" header="Category" sortable style="min-width: 8rem"></Column>
-        <Column header="Actions" style="min-width: 8rem">
-            <template #body="slotProps">
-                <Button
-                    label="Select"
-                    icon="pi pi-check"
-                    class="w-full"
-                    @click="selectProduct(slotProps.data)"
-                ></Button>
-            </template>
-        </Column>
-    </DataTable>
-</Popover>
+                <div class="flex flex-wrap gap-4">
+                    <!-- Product Name -->
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label for="productName">Product Name</label>
+                        <InputText
+                            id="productName"
+                            type="text"
+                            placeholder="Product Name"
+                            v-model="productName"
+                        />
 
-        </div>
-       
-    </div>
-    <!-- Brand -->
-    <div class="flex flex-col grow basis-0 gap-2">
-        <label for="brand">Brand</label>
-        <InputText id="brand" type="text" placeholder="Brand" />
-    </div>
-    <!-- Category -->
-    <div class="flex flex-col grow basis-0 gap-2">
-        <label for="category">Category</label>
-        <InputText id="category" type="text" placeholder="Consumable" readonly />
-    </div>
-</div>
+                        <div class="flex flex-wrap gap-2">
+                            <!-- Existing Items Button -->
+                            <Button
+                                type="button"
+                                icon="pi pi-list"
+                                label="Existing Items"
+                                @click="toggleDataTable"
+                            />
 
+                            <!-- Popover for Existing Items -->
+                            <Popover
+                                ref="op2"
+                                id="overlay_panel"
+                                style="width: 38rem"
+                            >
+                                <DataTable
+                                    v-model:selection="selectedProduct"
+                                    :value="consumableProducts"
+                                    selectionMode="single"
+                                    paginator
+                                    :rows="5"
+                                    @row-select="onProductSelect"
+                                >
+                                    <Column
+                                        field="name"
+                                        header="Name"
+                                        sortable
+                                        style="min-width: 12rem"
+                                    ></Column>
+                                    <Column
+                                        field="brand"
+                                        header="Brand"
+                                        sortable
+                                        style="min-width: 8rem"
+                                    ></Column>
+                                    <Column
+                                        field="category"
+                                        header="Category"
+                                        sortable
+                                        style="min-width: 8rem"
+                                    ></Column>
+                                    <Column
+                                        header="Actions"
+                                        style="min-width: 8rem"
+                                    >
+                                        <template #body="slotProps">
+                                            <Button
+                                                label="Select"
+                                                icon="pi pi-check"
+                                                class="w-full"
+                                                @click="
+                                                    onProductSelect(
+                                                        slotProps.data,
+                                                    )
+                                                "
+                                            ></Button>
+                                        </template>
+                                    </Column>
+                                </DataTable>
+                            </Popover>
+                        </div>
+                    </div>
+                    <!-- Brand -->
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label for="brand">Brand</label>
+                        <InputText
+                            id="brand"
+                            type="text"
+                            placeholder="Brand"
+                            v-model="brand"
+                        />
+                    </div>
+                    <!-- Category -->
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label for="category">Category</label>
+                        <InputText
+                            id="category"
+                            type="text"
+                            placeholder="Category"
+                            v-model="category"
+                            readonly
+                        />
+                    </div>
+                </div>
 
                 <!-- Section 2: Batch Details -->
                 <div class="grid grid-cols-3 gap-4">
@@ -142,7 +206,16 @@ const removeSerialNumber = (index) => {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label for="srp">Suggested Retail Price (SRP)</label>
+                        <InputText
+                            id="srp"
+                            type="number"
+                            placeholder="Enter SRP"
+                            v-model="srp"
+                        />
+                    </div>
                     <div class="flex flex-col grow basis-0 gap-2">
                         <label for="unit">Unit</label>
                         <InputText id="unit" type="text" placeholder="Unit" />
@@ -157,8 +230,8 @@ const removeSerialNumber = (index) => {
                     </div>
                 </div>
 
-                  <!-- Section : stoccks Details -->
-                  <div class="grid grid-cols-2 gap-4">
+                <!-- Section : stoccks Details -->
+                <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col grow basis-0 gap-2">
                         <label for="batchNumber">Minimum Stock</label>
                         <InputText
@@ -200,24 +273,33 @@ const removeSerialNumber = (index) => {
                 </div>
 
                 <!-- Section 3: Individual Items -->
-                <div class="flex flex-wrap gap-4">
-                    <div class="flex flex-col grow basis-0 gap-2">
-                        <label for="serialNumber">Serial Number</label>
-                        <div class="flex gap-2">
+                <div class="flex flex-col gap-4 mt-4">
+                    <label for="serialNumber" class="col-span-2 font-medium">
+                        Per Item Serial Number
+                    </label>
+
+                    <!-- Serial Number Section -->
+                    <div class="items-center gap-4">
+                        <!-- Label -->
+
+                        <!-- Input and Button -->
+                        <div class="col-span-10 flex items-center gap-4">
                             <InputText
                                 id="serialNumber"
                                 type="text"
-                                placeholder="Serial Number"
+                                placeholder="Enter Serial Number"
                                 v-model="newSerialNumber"
+                                class="flex-grow"
                             />
                             <Button
                                 label="Add"
-                                :fluid="false"
+                                class="p-button-primary"
                                 @click="addSerialNumber"
                             ></Button>
                         </div>
                     </div>
                 </div>
+
                 <div class="flex flex-col grow basis-0 gap-2">
                     <label
                         >Serial Number List

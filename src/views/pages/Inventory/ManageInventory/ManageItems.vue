@@ -1,8 +1,10 @@
 <script setup>
 import { CustomerService } from "@/service/CustomerService";
 import { ProductService } from "@/service/ProductService";
+import { RoomService } from "@/service/RoomService";
 import { FilterMatchMode, FilterOperator } from "@primevue/core/api";
 import { InputNumber } from "primevue";
+
 import { onBeforeMount, ref } from "vue";
 
 const customers1 = ref(null);
@@ -14,9 +16,6 @@ const batchExpandedRows = ref([]);
 const toast = ref(null);
 const NonConsumablebatchDialog = ref(false);
 
-const op2 = ref();
-const selectedProduct = ref(null);
-
 const deleteProductDialog = ref(false); // State for delete dialog
 const deleteBatchDialog = ref(false);
 const selectedBatchForDeletion = ref(null);
@@ -25,15 +24,180 @@ const product = ref({}); // Initialize product as a reactive reference
 const batchDialog = ref(false);
 
 const productDialog = ref(false);
-const products = ref([]); // Use `ref` for reactivity
 
 const submitted = ref(false);
 
 const selectedBatch = ref({});
 
+// State variables
+const assignItemDialogVisible = ref(false); // Dialog visibility
+
+const products = ref([]); // Products for the DataTable
+const selectedProduct = ref(null); // Selected product from the DataTable
+const selectedItem = ref(null); // Selected item details
+const popoverRef = ref(null); // Reference to the Popover
+
+const availableRooms = ref([]);
+const selectedRoom = ref(null);
+const serialNumbers = ref([]);
+// For damaged item reporting
+const damageDialogVisible = ref(false);
+const selectedDamageItem = ref(null);
+const damageDetails = ref({
+    type: "",
+    reason: "",
+});
+const damageTypes = ref([
+    { label: "Physical Damage", value: "physical" },
+    { label: "Malfunction", value: "malfunction" },
+    { label: "Wear and Tear", value: "wear_and_tear" },
+    { label: "Other", value: "other" },
+]);
+
+// Function to open the damage report dialog
+function reportDamage(item) {
+    selectedDamageItem.value = item; // Set the selected item for damage reporting
+    damageDetails.value = { type: "", reason: "" }; // Reset the form data
+    damageDialogVisible.value = true; // Show the damage dialog
+}
+
+// Function to submit the damage report
+function submitDamageReport() {
+    if (!damageDetails.value.type || !damageDetails.value.reason) {
+        toast.value.add({
+            severity: "warn",
+            summary: "Validation Error",
+            detail: "Please fill in all fields.",
+            life: 3000,
+        });
+        return;
+    }
+
+    // Process damage report (You can make an API call to save this or just update locally)
+    console.log(
+        "Damage report for item:",
+        selectedDamageItem.value,
+        damageDetails.value,
+    );
+
+    // Update the item's status to "Damaged"
+    selectedDamageItem.value.status = "Damaged";
+
+    // Set rental column to "No" and rental price to "-"
+    selectedDamageItem.value.rental = "No"; // Set rental to "No"
+    selectedDamageItem.value.rentalPrice = "-"; // Set rental price to "-"
+    selectedDamageItem.value.assignedRoom = null; // Remove assigned room
+
+    // Update the data in serialNumbers array (or your data source)
+    const itemIndex = serialNumbers.value.findIndex(
+        (item) => item.serialNumber === selectedDamageItem.value.serialNumber,
+    );
+    if (itemIndex !== -1) {
+        serialNumbers.value[itemIndex] = { ...selectedDamageItem.value }; // Update the item data
+    }
+
+    // Close the dialog
+    damageDialogVisible.value = false;
+
+    // Optional: Toast notification for success
+    toast.value.add({
+        severity: "success",
+        summary: "Damage Reported",
+        detail: `Damage reported for item ${selectedDamageItem.value.serialNumber}. Rental details have been updated.`,
+        life: 3000,
+    });
+}
+
+// Function to cancel damage report
+function cancelDamageReport() {
+    damageDialogVisible.value = false;
+}
+
+// Reassign the selected item
+function reassignItem() {
+    if (!selectedItem.value) {
+        console.error("No item selected for reassignment.");
+        return;
+    }
+
+    if (!selectedRoom.value) {
+        console.error("No room selected for reassignment.");
+        return;
+    }
+
+    // Update the selected item's room number and status
+    selectedItem.value.roomNumber = selectedRoom.value.roomNumber;
+    selectedItem.value.status = "Assigned";
+
+    console.log("Item after reassignment:", selectedItem.value);
+
+    // Update the data in serialNumbers array
+    const itemIndex = serialNumbers.value.findIndex(
+        (item) => item.serialNumber === selectedItem.value.serialNumber,
+    );
+    if (itemIndex !== -1) {
+        serialNumbers.value.splice(itemIndex, 1, { ...selectedItem.value });
+    }
+
+    // Close the dialog
+    assignItemDialogVisible.value = false;
+
+    // Reset the selected room
+    selectedRoom.value = null;
+
+    // Optional: Toast notification
+    toast.value.add({
+        severity: "success",
+        summary: "Success",
+        detail: `Item ${selectedItem.value.serialNumber} reassigned to Room ${selectedItem.value.roomNumber}.`,
+        life: 3000,
+    });
+}
+// Function to open the dialog for reassignment
+function reassign(item) {
+    console.log("Reassigning item:", item); // Debugging
+    selectedItem.value = { ...item }; // Clone the item to avoid direct mutations
+    assignItemDialogVisible.value = true; // Open the dialog
+}
+
+// Function to toggle the popover visibility
+function toggleDataTable3(event) {
+    if (popoverRef.value) {
+        popoverRef.value.toggle(event); // Toggle the popover
+    }
+}
+
+// Function to handle room selection
+function selectRoom(room) {
+    console.log("Room selected:", room);
+    selectedRoom.value = room; // Update the selected room
+    if (popoverRef.value) {
+        popoverRef.value.hide(); // Close the popover after selection
+    }
+}
+
+// Fetch available rooms from RoomService
+onBeforeMount(() => {
+    availableRooms.value = RoomService.getAvailableRooms();
+});
+
+// Function to handle product selection
+function onProductSelect(event) {
+    console.log("Selected Product:", event.data);
+    selectedProduct.value = event.data; // Update the selected product
+    if (popoverRef.value) {
+        popoverRef.value.hide(); // Close the popover
+    }
+}
+
 function editProduct(prod) {
     product.value = { ...prod }; // Clone the product data to avoid direct mutations
     productDialog.value = true; // Open the dialog
+}
+
+function formatPrice(price) {
+    if (price == null || isNaN(price)) return "₱0.00"; // Handle null or invalid price
+    return `₱${price.toFixed(2)}`; // Format with two decimal places
 }
 
 function hideDialog() {
@@ -41,7 +205,206 @@ function hideDialog() {
     batchDialog.value = false;
     submitted.value = false;
     NonConsumablebatchDialog.value = false;
+    NonConsumablSerialDialog.value = false;
+
+    selectedSerial.value = {};
 }
+
+const selectedSerialForDeletion = ref(null); // Serial selected for deletion
+const deleteserialDialog = ref(false); // Dialog state
+
+// Function to confirm serial deletion
+function confirmDeleteSerial(serial, productId, batchId) {
+    if (!serial || !serial.serialNumber) {
+        console.error("Invalid serial data provided.");
+        return;
+    }
+
+    // Store the selected serial with its associated product and batch for deletion
+    selectedSerialForDeletion.value = {
+        serialNumber: serial.serialNumber,
+        productId,
+        batchId,
+    };
+
+    // Open the confirmation dialog
+    deleteserialDialog.value = true;
+
+    console.log("Serial set for deletion:", selectedSerialForDeletion.value);
+}
+
+function saveEditedSerial(serialData) {
+    if (!serialData || !serialData.serialNumber) {
+        console.error("Invalid serial data provided:", serialData);
+        return;
+    }
+
+    console.log("Serial data to save:", serialData);
+
+    // Ensure products is iterable
+    if (!Array.isArray(products.value) || products.value.length === 0) {
+        console.error("Products list is empty or not loaded.");
+        return;
+    }
+
+    let matchedProduct = null;
+    let matchedBatch = null;
+    let matchedSerial = null;
+
+    // Search for the serial number in all products and their batches
+    for (const product of products.value) {
+        console.log("Checking Product:", product);
+
+        for (const batch of product.batches || []) {
+            console.log("Checking Batch:", batch);
+
+            matchedSerial = batch.serialNumbers?.find(
+                (sn) => sn.serialNumber === serialData.serialNumber,
+            );
+
+            if (matchedSerial) {
+                matchedProduct = product;
+                matchedBatch = batch;
+                break;
+            }
+        }
+        if (matchedSerial) break;
+    }
+
+    if (!matchedProduct || !matchedBatch || !matchedSerial) {
+        console.error("Product, batch, or serial number not found.");
+        return;
+    }
+
+    console.log("Matched Product:", matchedProduct);
+    console.log("Matched Batch:", matchedBatch);
+    console.log("Matched Serial:", matchedSerial);
+
+    // Reset assignedRoom if status is set to "Available"
+    if (serialData.status.toLowerCase().trim() === "available") {
+        serialData.roomNumber = "-";
+    }
+
+    // Remove rentalPrice if rental is set to "No"
+    if (serialData.rental === "No") {
+        serialData.rentalPrice = "-"; // Or use "-" based on your requirements
+    }
+
+    // Update the rentalPrice field explicitly
+    if (serialData.rentalPrice !== undefined) {
+        matchedSerial.rentalPrice = serialData.rentalPrice;
+    }
+
+    // Update the rest of the serial data
+    Object.assign(matchedSerial, serialData);
+    console.log("Serial updated successfully:", matchedSerial);
+
+    // Show success message
+    toast.value.add({
+        severity: "success",
+        summary: "Success",
+        detail: `Serial number ${matchedSerial.serialNumber} updated successfully`,
+        life: 3000,
+    });
+
+    hideSerialDialog();
+}
+
+// State management
+const isDialog2Visible = ref(false); // Controls the dialog visibility
+const isDialogVisible = ref(false); // Controls the dialog visibility
+
+function assignItem() {
+    if (!selectedItem.value) {
+        console.error("No item selected for assignment.");
+        return;
+    }
+
+    if (!selectedRoom.value) {
+        console.error("No room selected for assignment.");
+        return;
+    }
+
+    // Assign the selected room number and update status
+    selectedItem.value.roomNumber = selectedRoom.value.roomNumber;
+    selectedItem.value.status = "Assigned";
+
+    console.log("Item after assignment:", selectedItem.value);
+
+    // Close the dialog
+    assignItemDialogVisible.value = false;
+
+    // Reset the selectedRoom
+    selectedRoom.value = null;
+
+    // Optional: Show success message
+    toast.value.add({
+        severity: "success",
+        summary: "Success",
+        detail: `Item ${selectedItem.value.serialNumber} assigned to Room ${selectedItem.value.roomNumber}.`,
+        life: 3000,
+    });
+}
+
+function openAssignItemDialog(item) {
+    selectedItem.value = item;
+    assignItemDialogVisible.value = true;
+}
+// Function to delete a serial number
+function deleteSerial() {
+    const { productId, batchId, serialNumber } =
+        selectedSerialForDeletion.value;
+
+    if (!productId || !batchId || !serialNumber) {
+        console.error("Invalid data for serial deletion.");
+        return;
+    }
+
+    // Locate the product
+    const productIndex = products.value.findIndex(
+        (product) => product.id === productId,
+    );
+    if (productIndex === -1) {
+        console.error("Product not found for deletion.");
+        return;
+    }
+
+    // Locate the batch within the product
+    const batchIndex = products.value[productIndex].batches.findIndex(
+        (batch) => batch.batchId === batchId,
+    );
+    if (batchIndex === -1) {
+        console.error("Batch not found for deletion.");
+        return;
+    }
+
+    // Locate the serial within the batch
+    const serialIndex = products.value[productIndex].batches[
+        batchIndex
+    ].serialNumbers.findIndex((serial) => serial.serialNumber === serialNumber);
+    if (serialIndex === -1) {
+        console.error("Serial number not found for deletion.");
+        return;
+    }
+
+    // Delete the serial from the batch
+    products.value[productIndex].batches[batchIndex].serialNumbers.splice(
+        serialIndex,
+        1,
+    );
+
+    console.log("Serial deleted successfully:", serialNumber);
+
+    // Close the dialog and reset the state
+    deleteserialDialog.value = false;
+    selectedSerialForDeletion.value = null;
+}
+
+// Options for rental dropdown
+const rentalOptions = [
+    { label: "Yes", value: "Yes" },
+    { label: "No", value: "No" },
+];
 
 function saveProduct() {
     submitted.value = true;
@@ -72,9 +435,26 @@ const warrantyUnitOptions = ref([
 ]);
 
 const unitOptions = ref([
-    { label: "Kilograms", value: "kg" },
-    { label: "Liters", value: "l" },
-    { label: "Pieces", value: "pcs" },
+    // Weight
+    { label: "Kilograms", value: "kilograms" },
+    { label: "Grams", value: "grams" },
+    { label: "Pounds", value: "pounds" },
+    { label: "Ounces", value: "ounces" },
+
+    // Volume
+    { label: "Liters", value: "liters" },
+    { label: "Milliliters", value: "milliliters" },
+    { label: "Cubic Meters", value: "cubic_meters" },
+    { label: "Gallons", value: "gallons" },
+    { label: "Pints", value: "pints" },
+    { label: "Fluid Ounces", value: "fluid_ounces" },
+
+    // Count
+    { label: "Pieces", value: "pieces" },
+    { label: "Units", value: "units" },
+    { label: "Items", value: "items" },
+    { label: "Packages", value: "packages" },
+    { label: "Boxes", value: "boxes" },
 ]);
 
 function saveNonConsumableBatchDetails() {
@@ -84,6 +464,14 @@ function saveNonConsumableBatchDetails() {
     ) {
         console.error("Batch data is incomplete.");
         return;
+    }
+
+    // Ensure the `unit` field stores only the value, not the full object
+    if (
+        selectedBatch.value.unit &&
+        typeof selectedBatch.value.unit === "object"
+    ) {
+        selectedBatch.value.unit = selectedBatch.value.unit.value;
     }
 
     // Find the product containing the batch
@@ -111,7 +499,6 @@ function saveNonConsumableBatchDetails() {
         console.warn("Product not found containing this batch.");
     }
 
-    // Show success toast
     showSuccess();
     NonConsumablebatchDialog.value = false;
 }
@@ -123,6 +510,41 @@ function showSuccess() {
         detail: "Edit Successful",
         life: 3000,
     });
+}
+
+const NonConsumablSerialDialog = ref(false);
+
+const selectedSerial = ref({
+    serialNumber: "",
+    status: "Available",
+    rental: "No", // Default rental status
+    rentalPrice: "",
+});
+
+// Options for rental dropdown
+
+// Edit serial function
+function editSerial(serial) {
+    selectedSerial.value = {
+        rental: "No", // Default value
+        rentalPrice: null, // Default price
+        ...serial, // Clone the rest of the data
+    };
+    NonConsumablSerialDialog.value = true;
+    console.log("Selected serial:", selectedSerial.value);
+}
+
+// Close dialog and reset the form
+function hideSerialDialog() {
+    NonConsumablSerialDialog.value = false;
+
+    // Reset selectedSerial
+    selectedSerial.value = {
+        serialNumber: "",
+        status: "",
+        roomNumber: "",
+    };
+    console.log("Dialog closed and form reset.");
 }
 
 function saveBatchDetails() {
@@ -235,10 +657,6 @@ function getOrderSeverity(order) {
     }
 }
 
-function toggleDataTable(event) {
-    op2.value.toggle(event);
-}
-
 function clearFilter() {
     filters.value = {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -249,8 +667,16 @@ function clearFilter() {
     };
 }
 
-function onProductSelect(event) {
-    console.log("Selected serial number:", event.data);
+// Function to open the first dialog
+function toggleDataTable(item) {
+    selectedItem.value = item; // Set the selected item
+    isDialogVisible.value = true; // Open the dialog
+}
+
+// Function to open the second dialog
+function toggleDataTable2(item) {
+    selectedItem.value = item; // Set the selected item
+    isDialog2Visible.value = true; // Open the dialog
 }
 
 function getStockSeverity(product) {
@@ -342,10 +768,6 @@ function openNonConsumableBatchDialog(batchData) {
     NonConsumablebatchDialog.value = true;
 
     console.log("Opening dialog with data:", selectedBatch.value);
-}
-
-function formatPrice(value) {
-    return parseFloat(value).toFixed(2);
 }
 
 function initFilters() {
@@ -466,7 +888,7 @@ function showError() {
 
 <template>
     <div class="card">
-        <div class="font-semibold text-xl mb-4">Manage Items</div>
+        <div class="font-semibold text-xl mb-4">Item Control</div>
         <DataTable
             v-model:expandedRows="expandedRows"
             :value="products"
@@ -524,12 +946,9 @@ function showError() {
             </template>
 
             <Column expander style="width: 2rem" />
-            <Column
-                field="name"
-                header="Product Name"
-                style="min-width:"
-            ></Column>
+            <Column field="name" header="Item Name" style="min-width:"></Column>
             <Column field="brand" sortable header="Brand"></Column>
+            <Column field="quantity" sortable header="Quantity"></Column>
             <Column field="description" sortable header="Description"></Column>
             <Column
                 field="category"
@@ -590,6 +1009,7 @@ function showError() {
                         </IconField>
                     </div>
 
+                    <!--Consumable Batch Table-->
                     <DataTable
                         class="p-datatable-sm"
                         v-model:expandedRows="batchExpandedRows"
@@ -623,12 +1043,21 @@ function showError() {
                                 }}</span>
                             </template>
                         </Column>
+
+                        <Column field="srp" header="SRP" sortable>
+                            <template #body="slotProps">
+                                <span
+                                    >₱{{ slotProps.data.srp.toFixed(2) }}</span
+                                >
+                            </template>
+                        </Column>
                         <Column field="unit" header="Unit" sortable></Column>
                         <Column
                             field="supplier"
                             header="Supplier"
                             sortable
                         ></Column>
+
                         <Column field="expDate" header="Exp Date" sortable>
                             <template #body="slotProps">
                                 <span style="color: red">{{
@@ -679,32 +1108,28 @@ function showError() {
                                     <Button
                                         type="button"
                                         icon="pi pi-list"
-                                        @click="toggleDataTable"
+                                        @click="toggleDataTable(slotProps.data)"
                                         rounded
                                         class="mr-2"
                                     />
-                                    <Popover
-                                        ref="op2"
-                                        id="overlay_panel"
-                                        style="width: 450px"
+                                    <Dialog
+                                        header="Items"
+                                        v-model:visible="isDialogVisible"
+                                        :breakpoints="{ '960px': '75vw' }"
+                                        :style="{ width: '40vw' }"
+                                        :modal="true"
+                                        :dismissable-mask="true"
                                     >
-                                        <DataTable
-                                            v-model:selection="selectedProduct"
-                                            :value="products"
-                                            selectionMode="single"
-                                            paginator
-                                            :rows="5"
-                                            :totalRecords="products.length"
-                                            @row-select="onProductSelect"
-                                        >
+                                        <!-- Header Section -->
+                                        <template #header>
                                             <div
                                                 class="flex items-center gap-2"
                                             >
                                                 <h6>
                                                     Items for
                                                     {{
-                                                        slotProps.data
-                                                            .batchNumber
+                                                        slotProps?.data
+                                                            ?.batchNumber
                                                     }}
                                                 </h6>
                                                 <Button
@@ -729,55 +1154,82 @@ function showError() {
                                                     />
                                                 </IconField>
                                             </div>
+                                        </template>
 
-                                            <DataTable
-                                                class="p-datatable-sm"
-                                                :value="
-                                                    slotProps.data.serialNumbers
-                                                "
+                                        <!-- Nested Data Table -->
+                                        <DataTable
+                                            class="p-datatable-sm"
+                                            :value="
+                                                slotProps?.data?.serialNumbers
+                                            "
+                                        >
+                                            <Column
+                                                field="serialNumber"
+                                                header="Serial Number"
+                                                sortable
+                                            />
+                                            <Column
+                                                field="srp"
+                                                header="Suggested Retail Price(SRP)"
+                                                sortable
+                                            />
+                                            <Column
+                                                :exportable="false"
+                                                style="min-width: 12rem"
                                             >
-                                                <Column
-                                                    field="serialNumber"
-                                                    header="Serial Number"
-                                                    sortable
-                                                ></Column>
-                                                <Column
-                                                    :exportable="false"
-                                                    style="min-width: 12rem"
-                                                >
-                                                    <template #body="slotProps">
-                                                        <Button
-                                                            icon="pi pi-pencil"
-                                                            outlined
-                                                            rounded
-                                                            class="mr-2"
-                                                            @click="
-                                                                editProduct(
-                                                                    slotProps.data,
-                                                                )
-                                                            "
-                                                        />
-                                                        <Button
-                                                            icon="pi pi-trash"
-                                                            outlined
-                                                            rounded
-                                                            severity="danger"
-                                                            @click="
-                                                                confirmDeleteProduct(
-                                                                    slotProps.data,
-                                                                )
-                                                            "
-                                                        />
-                                                    </template>
-                                                </Column>
-                                            </DataTable>
+                                                <template #body="slotProps">
+                                                    <Button
+                                                        icon="pi pi-pencil"
+                                                        outlined
+                                                        rounded
+                                                        class="mr-2"
+                                                        @click="
+                                                            editProduct(
+                                                                slotProps.data,
+                                                            )
+                                                        "
+                                                    />
+                                                    <Button
+                                                        icon="pi pi-trash"
+                                                        outlined
+                                                        rounded
+                                                        severity="danger"
+                                                        @click="
+                                                            confirmDeleteProduct(
+                                                                slotProps.data,
+                                                            )
+                                                        "
+                                                    />
+                                                </template>
+                                            </Column>
                                         </DataTable>
-                                    </Popover>
+
+                                        <!-- Main Data Table -->
+                                        <DataTable
+                                            v-model:selection="selectedProduct"
+                                            :value="products"
+                                            selectionMode="single"
+                                            paginator
+                                            :rows="5"
+                                            :totalRecords="products.length"
+                                            @row-select="onProductSelect"
+                                        >
+                                        </DataTable>
+
+                                        <!-- Footer Section -->
+                                        <template #footer>
+                                            <Button
+                                                label="Close"
+                                                @click="isDialogVisible = false"
+                                            />
+                                        </template>
+                                    </Dialog>
                                 </div>
                             </template>
                         </column>
                     </DataTable>
 
+                    <!--Non-Consumable Batch Table-->
                     <DataTable
                         class="p-datatable-sm"
                         v-model:expandedRows="batchExpandedRows"
@@ -790,11 +1242,7 @@ function showError() {
                             header="Batch Number"
                             sortable
                         ></Column>
-                        <Column
-                            field="quantity"
-                            header="Quantity"
-                            sortable
-                        ></Column>
+
                         <Column
                             field="purchaseDate"
                             header="Purchase Date"
@@ -812,11 +1260,25 @@ function showError() {
                             </template>
                         </Column>
                         <Column field="unit" header="Unit" sortable></Column>
+
                         <Column
                             field="supplier"
                             header="Supplier"
                             sortable
                         ></Column>
+
+                        <Column
+                            field="rental"
+                            header="Rental"
+                            sortable
+                        ></Column>
+
+                        <Column
+                            field="rentalprice"
+                            header="Rental Price"
+                            sortable
+                        ></Column>
+
                         <Column field="warranty" header="Warranty" sortable>
                             <template #body="slotProps">
                                 <span
@@ -825,6 +1287,11 @@ function showError() {
                                 >
                             </template>
                         </Column>
+                        <Column
+                            field="quantity"
+                            header="Quantity"
+                            sortable
+                        ></Column>
 
                         <Column
                             field="minimumstocks"
@@ -882,34 +1349,28 @@ function showError() {
                                     <Button
                                         type="button"
                                         icon="pi pi-list"
-                                        @click="toggleDataTable"
+                                        @click="
+                                            toggleDataTable2(slotProps.data)
+                                        "
                                         rounded
                                         class="mr-2"
                                     />
-                                    <Popover
-                                        ref="op2"
-                                        id="overlay_panel"
-                                        style="width: 450px"
+                                    <Dialog
+                                        v-model:visible="isDialog2Visible"
+                                        :header="`Items for Batch | ${slotProps.data?.batchNumber || 'N/A'}`"
+                                        :breakpoints="{ '960px': '75vw' }"
+                                        :style="{ width: '60vw' }"
+                                        :modal="true"
+                                        :dismissable-mask="true"
                                     >
                                         <DataTable
                                             v-model:selection="selectedProduct"
                                             :value="products"
                                             selectionMode="single"
-                                            paginator
-                                            :rows="5"
-                                            :totalRecords="products.length"
-                                            @row-select="onProductSelect"
                                         >
                                             <div
                                                 class="flex items-center gap-2"
                                             >
-                                                <h6>
-                                                    Items for
-                                                    {{
-                                                        slotProps.data
-                                                            .batchNumber
-                                                    }}
-                                                </h6>
                                                 <Button
                                                     type="button"
                                                     icon="pi pi-filter-slash"
@@ -938,6 +1399,13 @@ function showError() {
                                                 :value="
                                                     slotProps.data.serialNumbers
                                                 "
+                                                :totalRecords="
+                                                    slotProps.data.serialNumbers
+                                                        .length
+                                                "
+                                                :rows="5"
+                                                paginator
+                                                @row-select="onProductSelect"
                                             >
                                                 <Column
                                                     field="serialNumber"
@@ -950,42 +1418,126 @@ function showError() {
                                                     sortable
                                                 ></Column>
                                                 <Column
-                                                    field="assignedroom"
-                                                    header="Assigned Room"
+                                                    field="rental"
+                                                    header="Rental"
                                                     sortable
                                                 ></Column>
                                                 <Column
-                                                    :exportable="false"
-                                                    style="min-width: 9rem"
-                                                >
+                                                    field="rentalPrice"
+                                                    header="Rental Price"
+                                                    sortable
+                                                ></Column>
+                                                <Column
+                                                    field="roomNumber"
+                                                    header="Assigned Room"
+                                                    sortable
+                                                ></Column>
+                                                <Column :exportable="false">
                                                     <template #body="slotProps">
-                                                        <Button
-                                                            icon="pi pi-pencil"
-                                                            outlined
-                                                            rounded
-                                                            class="mr-2"
-                                                            @click="
-                                                                editProduct(
-                                                                    slotProps.data,
-                                                                )
-                                                            "
-                                                        />
-                                                        <Button
-                                                            icon="pi pi-trash"
-                                                            outlined
-                                                            rounded
-                                                            severity="danger"
-                                                            @click="
-                                                                confirmDeleteProduct(
-                                                                    slotProps.data,
-                                                                )
-                                                            "
-                                                        />
+                                                        <div class="flex gap-2">
+                                                            <!-- Edit Button -->
+                                                            <Button
+                                                                v-if="
+                                                                    slotProps.data.status.toLowerCase() ===
+                                                                        'available' ||
+                                                                    slotProps.data.status.toLowerCase() ===
+                                                                        'assigned'
+                                                                "
+                                                                icon="pi pi-pencil"
+                                                                outlined
+                                                                rounded
+                                                                @click="
+                                                                    editSerial(
+                                                                        slotProps.data,
+                                                                    )
+                                                                "
+                                                                v-tooltip="
+                                                                    'Edit Serial Details'
+                                                                "
+                                                            />
+
+                                                            <!-- Delete Button -->
+                                                            <Button
+                                                                icon="pi pi-trash"
+                                                                outlined
+                                                                rounded
+                                                                severity="danger"
+                                                                @click="
+                                                                    confirmDeleteSerial(
+                                                                        slotProps.data,
+                                                                    )
+                                                                "
+                                                                v-tooltip="
+                                                                    'Delete Serial'
+                                                                "
+                                                            />
+
+                                                            <!-- Conditional Assign Button -->
+                                                            <Button
+                                                                v-if="
+                                                                    slotProps.data.status.toLowerCase() ===
+                                                                    'available'
+                                                                "
+                                                                icon="pi pi-arrow-up-right"
+                                                                outlined
+                                                                rounded
+                                                                severity="success"
+                                                                @click="
+                                                                    openAssignItemDialog(
+                                                                        slotProps.data,
+                                                                    )
+                                                                "
+                                                                v-tooltip="
+                                                                    'Assign Item to Room'
+                                                                "
+                                                            />
+
+                                                            <!-- Button Visible for 'Assigned' Status -->
+                                                            <Button
+                                                                v-if="
+                                                                    slotProps.data.status.toLowerCase() ===
+                                                                    'assigned'
+                                                                "
+                                                                icon="pi pi-arrows-h"
+                                                                outlined
+                                                                rounded
+                                                                severity="info"
+                                                                @click="
+                                                                    reassign(
+                                                                        slotProps.data,
+                                                                    )
+                                                                "
+                                                                v-tooltip="
+                                                                    'Re-Assign Item'
+                                                                "
+                                                            ></Button>
+                                                            <!-- Damaged Button -->
+                                                            <Button
+                                                                v-if="
+                                                                    slotProps.data.status.toLowerCase() ===
+                                                                        'available' ||
+                                                                    slotProps.data.status.toLowerCase() ===
+                                                                        'assigned'
+                                                                "
+                                                                icon="pi pi-exclamation-triangle"
+                                                                outlined
+                                                                rounded
+                                                                severity="danger"
+                                                                @click="
+                                                                    reportDamage(
+                                                                        slotProps.data,
+                                                                    )
+                                                                "
+                                                                v-tooltip="
+                                                                    'Report Damage'
+                                                                "
+                                                            />
+                                                        </div>
                                                     </template>
                                                 </Column>
                                             </DataTable>
                                         </DataTable>
-                                    </Popover>
+                                    </Dialog>
                                 </div>
                             </template>
                         </column>
@@ -1182,16 +1734,22 @@ function showError() {
                     id="purchasePrice"
                     v-model="selectedBatch.purchasePrice"
                     mode="currency"
-                    currency="USD"
+                    currency="PHP"
                     required="true"
                     :invalid="submitted && !selectedBatch.purchasePrice"
                     fluid
                 />
-                <small
-                    v-if="submitted && !selectedBatch.purchasePrice"
-                    class="text-red-500"
-                    >Purchase Price is required.</small
-                >
+            </div>
+
+            <div>
+                <label for="srp" class="block font-bold mb-3">SRP</label>
+                <InputNumber
+                    id="srp"
+                    v-model="selectedBatch.srp"
+                    mode="currency"
+                    currency="PHP"
+                    fluid
+                />
             </div>
 
             <!-- Unit -->
@@ -1202,10 +1760,10 @@ function showError() {
                     v-model="selectedBatch.unit"
                     :options="unitOptions"
                     optionLabel="label"
-                    required="true"
-                    placeholder="Select Unit"
+                    optionValue="value"
                     fluid
                 />
+
                 <small
                     v-if="submitted && !selectedBatch.unit"
                     class="text-red-500"
@@ -1318,11 +1876,12 @@ function showError() {
                     id="purchasePrice"
                     v-model="selectedBatch.purchasePrice"
                     mode="currency"
-                    currency="USD"
+                    currency="PHP"
                     fluid
                 />
             </div>
 
+            <!-- Unit -->
             <!-- Unit -->
             <div>
                 <label for="unit" class="block font-bold mb-3">Unit</label>
@@ -1331,9 +1890,15 @@ function showError() {
                     v-model="selectedBatch.unit"
                     :options="unitOptions"
                     optionLabel="label"
-                    placeholder="Select Unit"
+                    optionValue="value"
                     fluid
                 />
+
+                <small
+                    v-if="submitted && !selectedBatch.unit"
+                    class="text-red-500"
+                    >Unit is required.</small
+                >
             </div>
 
             <!-- Supplier -->
@@ -1344,6 +1909,20 @@ function showError() {
                 <InputText
                     id="supplier"
                     v-model="selectedBatch.supplier"
+                    fluid
+                />
+            </div>
+            <div>
+                <label for="rental" class="block font-bold mb-3">Rental</label>
+                <InputText id="rental" v-model="selectedBatch.rental" fluid />
+            </div>
+            <div>
+                <label for="rentalprice" class="block font-bold mb-3"
+                    >Rental Price</label
+                >
+                <InputText
+                    id="rentalprice"
+                    v-model="selectedBatch.rentalprice"
                     fluid
                 />
             </div>
@@ -1402,61 +1981,54 @@ function showError() {
         </template>
     </Dialog>
 
-    <!-- Edit  Non-Consumable Serial  Details Dialog -->
+    <!--Non COnsumbale Serial Details Dialog-->
     <Dialog
         :dismissableMask="true"
-        v-model:visible="batchDialog"
+        v-model:visible="NonConsumablSerialDialog"
         :style="{ width: '450px' }"
-        header="Batch Details"
+        header="Edit Serial Details"
         :modal="true"
     >
         <div class="flex flex-col gap-6">
-            <!-- Batch Number -->
+            <!-- Serial Number -->
             <div>
-                <label for="batchNumber" class="block font-bold mb-3"
-                    >Batch Number</label
+                <label for="serialNumber" class="block font-bold mb-3"
+                    >Serial Number</label
                 >
                 <InputText
                     id="serialNumber"
-                    v-model.trim="selectedBatch.serialNumber"
-                    required="true"
-                    :invalid="submitted && !selectedBatch.serialNumber"
+                    v-model.trim="selectedSerial.serialNumber"
                     fluid
+                    disabled
                 />
             </div>
 
+            <!-- Rental Dropdown -->
             <div>
-                <label for="Assig" class="block font-bold mb-3">Supplier</label>
+                <label for="rental" class="block font-bold mb-3">Rental</label>
+                <Select
+                    id="rental"
+                    v-model="selectedSerial.rental"
+                    :options="rentalOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select Rental"
+                    class="w-full"
+                />
+            </div>
+
+            <!-- Rental Price -->
+            <div>
+                <label for="rentalPrice" class="block font-bold mb-3"
+                    >Rental Price</label
+                >
                 <InputText
-                    id="supplier"
-                    v-model="selectedBatch.supplier"
-                    required="true"
-                    fluid
+                    id="rentalPrice"
+                    v-model.number="selectedSerial.rentalPrice"
+                    placeholder="Enter rental price"
+                    class="w-full"
+                    :disabled="selectedSerial.rental !== 'Yes'"
                 />
-                <small
-                    v-if="submitted && !selectedBatch.supplier"
-                    class="text-red-500"
-                    >Supplier is required.</small
-                >
-            </div>
-
-            <!-- Expiration Date -->
-            <div>
-                <label for="expDate" class="block font-bold mb-3"
-                    >Expiration Date</label
-                >
-                <DatePicker
-                    id="expDate"
-                    v-model="selectedBatch.expDate"
-                    showIcon
-                    required="true"
-                    fluid
-                />
-                <small
-                    v-if="submitted && !selectedBatch.expDate"
-                    class="text-red-500"
-                    >Expiration Date is required.</small
-                >
             </div>
         </div>
 
@@ -1466,20 +2038,276 @@ function showError() {
                 label="Cancel"
                 icon="pi pi-times"
                 text
-                @click="hideDialog"
+                @click="hideSerialDialog"
             />
-            <Button label="Save" icon="pi pi-check" @click="saveBatchDetails" />
+            <Button
+                label="Save"
+                icon="pi pi-check"
+                @click="saveEditedSerial(selectedSerial)"
+            />
         </template>
     </Dialog>
-    <Toast ref="toast" />
+
+    <!-- Delete serial Dialog -->
+    <Dialog
+        v-model:visible="deleteserialDialog"
+        :style="{ width: '450px' }"
+        header="Confirm"
+        :modal="true"
+    >
+        <div class="flex items-center gap-4">
+            <i class="pi pi-exclamation-triangle !text-3xl" />
+            <span v-if="selectedSerialForDeletion">
+                Are you sure you want to delete
+                <b>{{ selectedSerialForDeletion.serialNumber }}</b
+                >?
+            </span>
+        </div>
+        <template #footer>
+            <Button
+                label="No"
+                icon="pi pi-times"
+                text
+                @click="deleteserialDialog = false"
+            />
+            <Button label="Yes" icon="pi pi-check" @click="deleteSerial" />
+        </template>
+    </Dialog>
+
+    <!--Assign Room Serial Dialog-->
+    <Dialog
+        v-model:visible="assignItemDialogVisible"
+        :style="{ width: '450px' }"
+        :header="`Assign Item - ${selectedItem?.serialNumber || 'N/A'}`"
+        :modal="true"
+    >
+        <div class="flex flex-col gap-4">
+            <!-- Display item details -->
+            <p><strong>Item:</strong> {{ selectedItem?.serialNumber }}</p>
+            <p><strong>Status:</strong> {{ selectedItem?.status }}</p>
+
+            <!-- Room Selection Dropdown -->
+            <div class="flex flex-wrap gap-2">
+                <Button
+                    type="button"
+                    icon="pi pi-fw pi-list"
+                    label="Select A Room"
+                    @click="toggleDataTable3"
+                />
+                <Popover
+                    ref="popoverRef"
+                    id="overlay_panel"
+                    style="width: 750px"
+                >
+                    <DataTable
+                        v-model:selection="selectedRoom"
+                        :value="availableRooms"
+                        selectionMode="single"
+                        :paginator="true"
+                        :rows="5"
+                    >
+                        <Column
+                            field="roomNumber"
+                            header="Room Number"
+                            sortable
+                        ></Column>
+                        <Column field="type" header="Type" sortable></Column>
+                        <Column
+                            field="status"
+                            header="Status"
+                            sortable
+                        ></Column>
+                        <Column field="price" header="Price" sortable>
+                            <template #body="slotProps">
+                                {{ formatPrice(slotProps.data.price) }}
+                            </template>
+                        </Column>
+                        <Column header="Action">
+                            <template #body="slotProps">
+                                <Button
+                                    label="Select"
+                                    class="p-button-sm p-button-primary"
+                                    @click="selectRoom(slotProps.data)"
+                                />
+                            </template>
+                        </Column>
+                    </DataTable>
+                </Popover>
+            </div>
+
+            <!-- Room Preview -->
+            <div v-if="selectedRoom" class="mt-4 p-3">
+                <h3 class="font-bold mb-2">Selected Room</h3>
+                <p>
+                    <strong>Room Number:</strong> {{ selectedRoom.roomNumber }}
+                </p>
+                <p><strong>Type:</strong> {{ selectedRoom.type }}</p>
+            </div>
+        </div>
+
+        <!-- Dialog Footer -->
+        <template #footer>
+            <Button
+                label="Cancel"
+                icon="pi pi-times"
+                text
+                @click="assignItemDialogVisible = false"
+            />
+            <Button label="Assign" icon="pi pi-check" @click="assignItem" />
+        </template>
+    </Dialog>
+
+    <!-- Re-Assign Room Dialog -->
+    <Dialog
+        v-model:visible="assignItemDialogVisible"
+        :style="{ width: '450px' }"
+        :header="`Re-Assign Item - ${selectedItem?.serialNumber || 'N/A'}`"
+        :modal="true"
+    >
+        <div class="flex flex-col gap-4">
+            <p><strong>Item:</strong> {{ selectedItem?.serialNumber }}</p>
+            <p><strong>Status:</strong> {{ selectedItem?.status }}</p>
+            <p>
+                <strong>Current Room:</strong>
+                {{ selectedItem?.roomNumber || "None" }}
+            </p>
+
+            <div class="flex flex-wrap gap-2">
+                <Button
+                    label="Select A Room"
+                    icon="pi pi-fw pi-list"
+                    @click="toggleDataTable3"
+                />
+                <Popover
+                    ref="popoverRef"
+                    id="overlay_panel"
+                    style="width: 750px"
+                >
+                    <DataTable
+                        v-model:selection="selectedRoom"
+                        :value="availableRooms"
+                        selectionMode="single"
+                        :rows="5"
+                        paginator
+                    >
+                        <Column
+                            field="roomNumber"
+                            header="Room Number"
+                            sortable
+                        ></Column>
+                        <Column field="type" header="Type" sortable></Column>
+                        <Column
+                            field="status"
+                            header="Status"
+                            sortable
+                        ></Column>
+                        <Column field="price" header="Price" sortable>
+                            <template #body="slotProps">
+                                {{ formatPrice(slotProps.data.price) }}
+                            </template>
+                        </Column>
+                        <Column header="Action">
+                            <template #body="slotProps">
+                                <Button
+                                    label="Select"
+                                    class="p-button-sm p-button-primary"
+                                    @click="selectRoom(slotProps.data)"
+                                />
+                            </template>
+                        </Column>
+                    </DataTable>
+                </Popover>
+            </div>
+
+            <!-- Selected Room Preview -->
+            <div v-if="selectedRoom" class="mt-4 p-3">
+                <h3>Selected Room</h3>
+                <p>
+                    <strong>Room Number:</strong> {{ selectedRoom.roomNumber }}
+                </p>
+                <p><strong>Type:</strong> {{ selectedRoom.type }}</p>
+            </div>
+        </div>
+
+        <template #footer>
+            <Button
+                label="Cancel"
+                icon="pi pi-times"
+                text
+                @click="assignItemDialogVisible = false"
+            />
+            <Button
+                label="Re-Assign"
+                icon="pi pi-check"
+                @click="reassignItem"
+            />
+        </template>
+    </Dialog>
+
+    <!-- Damage Report Dialog -->
+    <Dialog
+        v-model:visible="damageDialogVisible"
+        :dismissableMask="true"
+        :header="`Report Damaged Item - ${selectedDamageItem?.serialNumber || 'N/A'}`"
+        :modal="true"
+        :style="{ width: '400px' }"
+    >
+        <div class="p-fluid p-3">
+            <!-- Assigned Room -->
+            <div class="grid grid-cols-1 gap-2">
+                <label for="roomNumber">Assigned Room</label>
+                <InputText
+                    id="roomNumber"
+                    :value="selectedDamageItem?.roomNumber || '–'"
+                    readonly
+                    placeholder="Assigned Room"
+                    class="p-inputtext-sm"
+                />
+            </div>
+
+            <!-- Damage Type -->
+            <div class="grid grid-cols-1 gap-2 mt-3">
+                <label for="damageType">Damage Type</label>
+                <Dropdown
+                    id="damageType"
+                    v-model="damageDetails.type"
+                    :options="damageTypes"
+                    optionLabel="label"
+                    placeholder="Select Damage Type"
+                    class="p-dropdown-sm"
+                />
+            </div>
+
+            <!-- Damage Reason -->
+            <div class="grid grid-cols-1 gap-2 mt-3">
+                <label for="damageReason">Reason</label>
+                <Textarea
+                    id="damageReason"
+                    v-model="damageDetails.reason"
+                    rows="3"
+                    placeholder="Provide details..."
+                    class="p-inputtext-sm"
+                />
+            </div>
+        </div>
+
+        <template #footer>
+            <Button
+                label="Cancel"
+                icon="pi pi-times"
+                class="p-button-text p-button-sm"
+                @click="cancelDamageReport"
+            />
+            <Button
+                label="Submit"
+                icon="pi pi-check"
+                class="p-button-sm"
+                @click="submitDamageReport"
+            />
+        </template>
+    </Dialog>
+
+    <template>
+        <Toast ref="toast" />
+    </template>
 </template>
-
-<style scoped lang="scss">
-:deep(.p-datatable-frozen-tbody) {
-    font-weight: bold;
-}
-
-:deep(.p-datatable-scrollable .p-frozen-column) {
-    font-weight: bold;
-}
-</style>

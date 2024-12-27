@@ -22,6 +22,8 @@ const router = createRouter({
                         ),
                 },
 
+                      
+
                 {
                     path: "/Inventory/ViewInventory/ViewItems",
                     name: "View Inventory",
@@ -156,6 +158,12 @@ const router = createRouter({
             path: "/landing",
             name: "landing",
             component: () => import("@/views/pages/Landing.vue"),
+        },
+
+        {
+            path: "/BookingPanel",
+            name: "Booking",
+            component: () => import("@/views/pages/BookingPanel.vue"),
         },
         {
             path: "/pages/notfound",

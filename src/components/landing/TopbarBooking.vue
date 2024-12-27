@@ -1,18 +1,39 @@
 <script setup>
+import { useRouter, useRoute } from 'vue-router';
+import { nextTick } from 'vue';
+
+const router = useRouter();
+const route = useRoute();
+
 function smoothScroll(id) {
-    document.body.click();
-    const element = document.getElementById(id);
-    if (element) {
-        element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-    }
+  if (route.path !== '/landing') {
+    // Navigate first if not already on the landing page
+    router.push('/landing').then(() => {
+      // Wait until the navigation is complete and component is mounted
+      nextTick(() => {
+        scrollToElement(id);
+      });
+    });
+  } else {
+    // If already on the landing page, scroll immediately
+    scrollToElement(id);
+  }
+}
+
+function scrollToElement(id) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  }
 }
 </script>
 
 <template>
-    <a class="flex items-center" href="#">
+    
+        <a class="flex items-center" href="#">
         <svg viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-12 mr-2">
             <path
                 fill-rule="evenodd"
@@ -41,28 +62,29 @@ function smoothScroll(id) {
     >
         <i class="pi pi-bars !text-2xl"></i>
     </Button>
-    <div class="sticky top-0 items-center bg-surface-0 dark:bg-surface-900 grow justify-between hidden lg:flex absolute lg:static w-full left-0 top-full px-12 lg:px-0 z-20 rounded-border">
-        <ul class="list-none p-0 m-0 flex lg:items-center select-none flex-col lg:flex-row cursor-pointer gap-8">
-            <li>
-                <a @click="smoothScroll('hero')" class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl ">
-                    <span>Home</span>
-                </a>
-            </li>
-            <li>
-                <a @click="smoothScroll('features')" class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl">
-                    <span>Amenities</span>
-                </a>
-            </li>
-            <li>
-                <a @click="smoothScroll('highlights')" class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl">
-                    <span>Location</span>
-                </a>
-            </li>
-            <li>
-                <a @click="smoothScroll('pricing')" class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl">
-                    <span>Book</span>
-                </a>
-            </li>
-        </ul>
-    </div>
+        <div class="sticky top-0 items-center bg-surface-0 dark:bg-surface-900 grow justify-between hidden lg:flex absolute lg:static w-full left-0 top-full px-12 lg:px-0 z-20 rounded-border">
+            <ul class="list-none p-0 m-0 flex lg:items-center select-none flex-col lg:flex-row cursor-pointer gap-8">
+                <li>
+                    <a @click.prevent="smoothScroll('home')" href="#" class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl">Home</a>
+                </li>
+                <li>
+                    <a @click.prevent="smoothScroll('features')" href="#" class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl">Amenities</a>
+                </li>
+                <li>
+                    <a @click.prevent="smoothScroll('highlights')" href="#" class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl">Location</a>
+                </li>
+                <li>
+                    <a @click.prevent="smoothScroll('pricing')" href="#" class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl">Book</a>
+                </li>
+            </ul>
+        </div>
 </template>
+
+<style scoped>
+.text-link {
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 10px;
+    font-size: 16px;
+}
+</style>

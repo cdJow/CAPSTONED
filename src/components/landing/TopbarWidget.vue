@@ -1,6 +1,5 @@
 <script setup>
 function smoothScroll(id) {
-    document.body.click();
     const element = document.getElementById(id);
     if (element) {
         element.scrollIntoView({
@@ -11,8 +10,9 @@ function smoothScroll(id) {
 }
 </script>
 
+
 <template>
-    <a class="flex items-center" href="#">
+    <a class="flex items-center" href="#" @click="smoothScroll('targetElementId')">
         <svg viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-12 mr-2">
             <path
                 fill-rule="evenodd"
@@ -41,7 +41,7 @@ function smoothScroll(id) {
     >
         <i class="pi pi-bars !text-2xl"></i>
     </Button>
-    <div class="sticky top-0 items-center bg-surface-0 dark:bg-surface-900 grow justify-between hidden lg:flex absolute lg:static w-full left-0 top-full px-12 lg:px-0 z-20 rounded-border">
+    <div class="sticky top-0 items-center bg-surface-0 dark:bg-surface-900 grow justify-between hidden lg:flex absolute lg:static w-full right-0 top-full px-12 lg:px-0 z-20 rounded-border">
         <ul class="list-none p-0 m-0 flex lg:items-center select-none flex-col lg:flex-row cursor-pointer gap-8">
             <li>
                 <a @click="smoothScroll('hero')" class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl ">

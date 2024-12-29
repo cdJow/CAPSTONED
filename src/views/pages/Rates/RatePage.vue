@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import { ref } from "vue";
 
 // Sample room data
@@ -24,17 +24,17 @@ const roomTypes = ref([
 ]);
 
 // Selected category and dialog states
-const selectedCategoryId = ref<number | null>(null);
+const selectedCategoryId = ref(null);
 const showAddCategoryDialog = ref(false);
 const showSetPricingDialog = ref(false);
 
 // Form states
 const newCategory = ref({ name: "", description: "" });
-const selectedRoomType = ref<{ id: number; baseRate: number } | null>(null);
-const newPrice = ref<number | null>(null);
+const selectedRoomType = ref(null);
+const newPrice = ref(null);
 
 // Methods
-const setCategoryFilter = (categoryId: number | null) => {
+const setCategoryFilter = (categoryId) => {
     selectedCategoryId.value = categoryId;
 };
 
@@ -57,7 +57,7 @@ const addCategory = () => {
     }
 };
 
-const openPricingDialog = (roomType: { id: number; baseRate: number }) => {
+const openPricingDialog = (roomType) => {
     selectedRoomType.value = roomType;
     newPrice.value = roomType.baseRate;
     showSetPricingDialog.value = true;
@@ -280,23 +280,3 @@ const setPricing = () => {
         </div>
     </div>
 </template>
-
-<style lang="scss" scoped>
-/* Add custom SCSS styles */
-table {
-    th,
-    td {
-        @apply border border-gray-200 dark:border-gray-700;
-    }
-    th {
-        @apply bg-gray-50 dark:bg-gray-600 font-semibold text-sm uppercase tracking-wider;
-    }
-    td {
-        @apply text-sm;
-    }
-}
-
-textarea {
-    resize: none;
-}
-</style>

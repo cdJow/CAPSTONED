@@ -16,7 +16,7 @@
             clip-path: ellipse(150% 87% at 93% 13%);
         "
     >
-        <div class="mx-6 md:mx-20 mt-0 md:mt-6">
+        <div class="pt-30 mx-6 md:mx-20 mt-0 md:mt-6 py-20;">
             <h1 class="text-6xl font-bold text-white leading-tight">
                 <span class="font-light block">Woodland Suites</span>
                 Your Home Away From Home
@@ -32,6 +32,12 @@
                 to="/"
             ></Button>
         </div>
-        <div class="flex justify-center md:justify-end"></div>
+        <div class="flex justify-center md:justify-end">
+            <img
+                src="/demo/images/landing/screen-1.png"
+                alt="Hero Image"
+                class="w-9/12 md:w-auto"
+            />
+        </div>
     </div>
 </template>

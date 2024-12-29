@@ -12,7 +12,7 @@
                             fill="var(--primary-color)"
                         />
                     </svg>
-                    <h4 class="text-2xl font-bold">Woodland Suites</h4>
+                    <h4 class="text-2xl font-bold text-center md:text-left">Woodland Suites</h4>
                 </a>
             </div>
 
@@ -32,5 +32,22 @@
             </div>
         </div>
 
+        <!-- Social Media Links -->
+        <div class="mt-8 flex flex-col md:flex-row justify-center md:justify-between items-center">
+            <p class="text-surface-700 dark:text-surface-400 text-center mb-4 md:mb-0">
+                Follow us on:
+            </p>
+            <div class="flex gap-4">
+                <a href="#" class="text-surface-700 dark:text-surface-400 hover:text-primary transition">
+                    <i class="pi pi-facebook text-2xl"></i>
+                </a>
+                <a href="#" class="text-surface-700 dark:text-surface-400 hover:text-primary transition">
+                    <i class="pi pi-twitter text-2xl"></i>
+                </a>
+                <a href="#" class="text-surface-700 dark:text-surface-400 hover:text-primary transition">
+                    <i class="pi pi-instagram text-2xl"></i>
+                </a>
+            </div>
+        </div>
     </footer>
 </template>

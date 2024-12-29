@@ -17,10 +17,30 @@ const roomCategories = ref([
 ]);
 
 const roomTypes = ref([
-    { id: 1, categoryId: 1, name: "Single", baseRate: 50 },
-    { id: 2, categoryId: 1, name: "Double", baseRate: 80 },
-    { id: 3, categoryId: 2, name: "King", baseRate: 150 },
-    { id: 4, categoryId: 3, name: "Family", baseRate: 250 },
+    {
+        id: 1,
+        categoryId: 1,
+        name: "Single",
+        rates: { "6hrs": 30, "12hrs": 50, "24hrs": 80 },
+    },
+    {
+        id: 2,
+        categoryId: 1,
+        name: "Double",
+        rates: { "6hrs": 50, "12hrs": 80, "24hrs": 120 },
+    },
+    {
+        id: 3,
+        categoryId: 2,
+        name: "King",
+        rates: { "6hrs": 100, "12hrs": 150, "24hrs": 200 },
+    },
+    {
+        id: 4,
+        categoryId: 3,
+        name: "Family",
+        rates: { "6hrs": 200, "12hrs": 250, "24hrs": 300 },
+    },
 ]);
 
 // Selected category and dialog states
@@ -30,18 +50,16 @@ const showSetPricingDialog = ref(false);
 
 // Form states
 const newCategory = ref({ name: "", description: "" });
-const selectedRoomType = ref<{ id: number; baseRate: number } | null>(null);
-const newPrice = ref<number | null>(null);
+const selectedRoomType = ref<{
+    id: number;
+    name: string;
+    rates: { [key: string]: number };
+} | null>(null);
+const newRates = ref({ "6hrs": 0, "12hrs": 0, "24hrs": 0 });
 
 // Methods
 const setCategoryFilter = (categoryId: number | null) => {
     selectedCategoryId.value = categoryId;
-};
-
-const applyDynamicPricing = () => {
-    roomTypes.value.forEach((type) => {
-        type.baseRate += Math.random() * 10; // Example adjustment logic
-    });
 };
 
 const addCategory = () => {
@@ -57,23 +75,26 @@ const addCategory = () => {
     }
 };
 
-const openPricingDialog = (roomType: { id: number; baseRate: number }) => {
+const openPricingDialog = (roomType: {
+    id: number;
+    name: string;
+    rates: { [key: string]: number };
+}) => {
     selectedRoomType.value = roomType;
-    newPrice.value = roomType.baseRate;
+    newRates.value = { ...roomType.rates };
     showSetPricingDialog.value = true;
 };
 
 const setPricing = () => {
-    if (selectedRoomType.value && newPrice.value !== null) {
+    if (selectedRoomType.value) {
         const roomType = roomTypes.value.find(
             (type) => type.id === selectedRoomType.value?.id,
         );
         if (roomType) {
-            roomType.baseRate = newPrice.value;
+            roomType.rates = { ...newRates.value };
         }
         showSetPricingDialog.value = false;
         selectedRoomType.value = null;
-        newPrice.value = null;
     }
 };
 </script>
@@ -135,7 +156,7 @@ const setPricing = () => {
                         <th
                             class="py-2 px-4 text-left text-gray-700 dark:text-gray-300"
                         >
-                            Base Rate
+                            Rates
                         </th>
                         <th
                             class="py-2 px-4 text-left text-gray-700 dark:text-gray-300"
@@ -165,7 +186,10 @@ const setPricing = () => {
                             }}
                         </td>
                         <td class="py-2 px-4 text-gray-800 dark:text-gray-200">
-                            ${{ type.baseRate.toFixed(2) }}
+                            6hrs: ${{ type.rates["6hrs"].toFixed(2) }}, 12hrs:
+                            ${{ type.rates["12hrs"].toFixed(2) }}, 24hrs: ${{
+                                type.rates["24hrs"].toFixed(2)
+                            }}
                         </td>
                         <td class="py-2 px-4 text-gray-800 dark:text-gray-200">
                             <button
@@ -178,62 +202,6 @@ const setPricing = () => {
                     </tr>
                 </tbody>
             </table>
-        </div>
-
-        <!-- Add Category Dialog -->
-        <div
-            v-if="showAddCategoryDialog"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
-        >
-            <div
-                class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96"
-            >
-                <h2
-                    class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200"
-                >
-                    Add New Category
-                </h2>
-                <div class="mb-4">
-                    <label
-                        for="name"
-                        class="block mb-1 text-gray-700 dark:text-gray-300"
-                        >Category Name</label
-                    >
-                    <input
-                        v-model="newCategory.name"
-                        id="name"
-                        type="text"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
-                    />
-                </div>
-                <div class="mb-4">
-                    <label
-                        for="description"
-                        class="block mb-1 text-gray-700 dark:text-gray-300"
-                        >Description</label
-                    >
-                    <textarea
-                        v-model="newCategory.description"
-                        id="description"
-                        rows="3"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
-                    ></textarea>
-                </div>
-                <div class="flex justify-end gap-2">
-                    <button
-                        @click="showAddCategoryDialog = false"
-                        class="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        @click="addCategory"
-                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                        Add
-                    </button>
-                </div>
-            </div>
         </div>
 
         <!-- Set Pricing Dialog -->
@@ -251,13 +219,39 @@ const setPricing = () => {
                 </h2>
                 <div class="mb-4">
                     <label
-                        for="price"
+                        for="6hrs"
                         class="block mb-1 text-gray-700 dark:text-gray-300"
-                        >New Price</label
+                        >6hrs Price</label
                     >
                     <input
-                        v-model="newPrice"
-                        id="price"
+                        v-model.number="newRates['6hrs']"
+                        id="6hrs"
+                        type="number"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
+                    />
+                </div>
+                <div class="mb-4">
+                    <label
+                        for="12hrs"
+                        class="block mb-1 text-gray-700 dark:text-gray-300"
+                        >12hrs Price</label
+                    >
+                    <input
+                        v-model.number="newRates['12hrs']"
+                        id="12hrs"
+                        type="number"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
+                    />
+                </div>
+                <div class="mb-4">
+                    <label
+                        for="24hrs"
+                        class="block mb-1 text-gray-700 dark:text-gray-300"
+                        >24hrs Price</label
+                    >
+                    <input
+                        v-model.number="newRates['24hrs']"
+                        id="24hrs"
                         type="number"
                         class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
                     />

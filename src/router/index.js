@@ -59,6 +59,12 @@ const router = createRouter({
                 },
 
                 {
+                    path: "/Rates/RatePage",
+                    name: " Rate Page",
+                    component: () => import("@/views/pages/Rates/RatePage.vue"),
+                },
+
+                {
                     path: "/Inventory/GenerateReport/StockHistory",
                     name: "Stock Table",
                     component: () =>

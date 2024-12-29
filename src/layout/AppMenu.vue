@@ -75,6 +75,12 @@ const model = ref([
                             },
                         ],
                     },
+
+                    {
+                        label: "Rates Management",
+                        icon: "pi pi-fw pi-cog",
+                        to: "/Rates/RatePage",
+                    },
                 ],
             },
         ],

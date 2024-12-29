@@ -311,17 +311,19 @@ const toggleDataTable = (event) => {
                     </Dialog>
                 </div>
 
-                <div class="flex flex-col grow basis-0 gap-2">
-                    <label for="unit">Unit</label>
-                    <InputText id="unit" type="text" placeholder="Unit" />
-                </div>
-                <div class="flex flex-col grow basis-0 gap-2">
-                    <label for="supplier">Supplier</label>
-                    <InputText
-                        id="supplier"
-                        type="text"
-                        placeholder="Supplier"
-                    />
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label for="unit">Unit</label>
+                        <InputText id="unit" type="text" placeholder="Unit" />
+                    </div>
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label for="supplier">Supplier</label>
+                        <InputText
+                            id="supplier"
+                            type="text"
+                            placeholder="Supplier"
+                        />
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-6">

@@ -153,6 +153,44 @@ function reassignItem() {
         life: 3000,
     });
 }
+
+function moveToStockroom() {
+    if (!selectedItem.value) {
+        console.error("No item selected for stockroom move.");
+        return;
+    }
+
+    // Set the selected item's status to 'Available'
+    selectedItem.value.status = "Available";
+
+    // Remove the assigned room number
+    selectedItem.value.roomNumber = null;
+
+    console.log("Item after moving to stockroom:", selectedItem.value);
+
+    // Update the data in serialNumbers array
+    const itemIndex = serialNumbers.value.findIndex(
+        (item) => item.serialNumber === selectedItem.value.serialNumber,
+    );
+    if (itemIndex !== -1) {
+        serialNumbers.value.splice(itemIndex, 1, { ...selectedItem.value });
+    }
+
+    // Close the dialog
+    assignItemDialogVisible.value = false;
+
+    // Reset the selected room
+    selectedRoom.value = null;
+
+    // Optional: Toast notification
+    toast.value.add({
+        severity: "success",
+        summary: "Success",
+        detail: `Item ${selectedItem.value.serialNumber} moved to stockroom and status set to Available.`,
+        life: 3000,
+    });
+}
+
 // Function to open the dialog for reassignment
 function reassign(item) {
     console.log("Reassigning item:", item); // Debugging
@@ -1365,7 +1403,7 @@ function showError() {
                                     >
                                         <DataTable
                                             v-model:selection="selectedProduct"
-                                            :value="products"
+                                            :value="serialNumbers"
                                             selectionMode="single"
                                         >
                                             <div
@@ -1468,7 +1506,7 @@ function showError() {
                                                                     )
                                                                 "
                                                                 v-tooltip="
-                                                                    'Delete Serial'
+                                                                    'Delete Item'
                                                                 "
                                                             />
 
@@ -2160,6 +2198,7 @@ function showError() {
     <!-- Re-Assign Room Dialog -->
     <Dialog
         v-model:visible="assignItemDialogVisible"
+        :dismissableMask="true"
         :style="{ width: '450px' }"
         :header="`Re-Assign Item - ${selectedItem?.serialNumber || 'N/A'}`"
         :modal="true"
@@ -2173,11 +2212,22 @@ function showError() {
             </p>
 
             <div class="flex flex-wrap gap-2">
+                <!-- Button to Select a Room -->
                 <Button
                     label="Select A Room"
                     icon="pi pi-fw pi-list"
                     @click="toggleDataTable3"
                 />
+
+                <!-- Button to Move to Stockroom -->
+                <Button
+                    label="Move to Stockroom"
+                    icon="pi pi-fw pi-arrow-left"
+                    class="p-button-sm p-button-warning"
+                    @click="moveToStockroom"
+                />
+
+                <!-- Popover for Room Selection -->
                 <Popover
                     ref="popoverRef"
                     id="overlay_panel"

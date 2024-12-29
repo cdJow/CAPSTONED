@@ -20,6 +20,9 @@ const category = ref(""); // Category
 const products = ref([]); // Holds the list of products
 const selectedProduct = ref(null); // For storing the selected product
 
+const isBatchSRP = ref(false); // Tracks whether the checkbox is checked
+const showInfoDialog = ref(false); // Controls the visibility of the info dialog
+
 // Function to fetch products from ProductService
 const fetchProducts = () => {
     try {
@@ -207,15 +210,32 @@ const removeSerialNumber = (index) => {
                 </div>
 
                 <div class="grid grid-cols-3 gap-4">
-                    <div class="flex flex-col grow basis-0 gap-2">
-                        <label for="srp">Suggested Retail Price (SRP)</label>
-                        <InputText
-                            id="srp"
-                            type="number"
-                            placeholder="Enter SRP"
-                            v-model="srp"
-                        />
+                    <div>
+                        <!-- Label, Question Mark, and Checkbox -->
+                        <div class="flex items-center gap-2 mb-2">
+                            <label class="font-medium"
+                                >Set Suggested Retail Price</label
+                            >
+                            <i
+                                class="pi pi-question-circle text-blue-500 cursor-pointer"
+                                @click="showInfoDialog = true"
+                            ></i>
+                            <Checkbox v-model="isBatchSRP" binary />
+                        </div>
+
+                        <!-- Rental Price Input -->
+                        <div>
+                            <InputText
+                                id="batchRentalPrice"
+                                type="number"
+                                placeholder="Enter SRP price for batch"
+                                v-model="isBatchSRP"
+                                class="w-full"
+                                :disabled="!isBatchSRP"
+                            />
+                        </div>
                     </div>
+
                     <div class="flex flex-col grow basis-0 gap-2">
                         <label for="unit">Unit</label>
                         <InputText id="unit" type="text" placeholder="Unit" />
@@ -338,4 +358,11 @@ const removeSerialNumber = (index) => {
             </div>
         </div>
     </Fluid>
+
+    <Dialog v-model:visible="showInfoDialog" header="Information" :modal="true">
+        <p>
+            Enable this option to set a suggested retail price or apply a batch
+            retail price for all items.
+        </p>
+    </Dialog>
 </template>

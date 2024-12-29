@@ -181,19 +181,6 @@ function toggleDataTable(event) {
                     </template>
                 </Column>
 
-                <!-- Reported Date -->
-                <Column field="reportedDate" header="Reported Date" sortable>
-                    <template #body="slotProps">
-                        <span class="text-gray-600">
-                            {{
-                                new Date(
-                                    slotProps.data.reportedDate,
-                                ).toLocaleDateString()
-                            }}
-                        </span>
-                    </template>
-                </Column>
-
                 <!-- Reason -->
                 <Column field="reason" header="Reason" sortable>
                     <template #body="slotProps">
